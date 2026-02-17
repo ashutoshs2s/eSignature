@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eSignature</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header" class="hidden">
+      <div class="header-inner">
+        <div class="logo">eSignature</div>
+        <nav>
+          <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+          <button class="nav-btn" data-view="to-sign">To Sign</button>
+        </nav>
+        <div class="header-right">
+          <span id="user-name"></span>
+          <button id="logout-btn" class="btn btn-sm">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Auth View -->
+    <div id="auth-view" class="view">
+      <div class="auth-container">
+        <h1>eSignature</h1>
+        <p class="subtitle">Simple, secure document signing</p>
+
+        <div class="tab-bar">
+          <button class="tab active" data-tab="login">Login</button>
+          <button class="tab" data-tab="register">Register</button>
+        </div>
+
+        <form id="login-form" class="auth-form">
+          <input type="email" name="email" placeholder="Email" required>
+          <input type="password" name="password" placeholder="Password" required>
+          <button type="submit" class="btn btn-primary btn-full">Login</button>
+          <div class="form-error" id="login-error"></div>
+        </form>
+
+        <form id="register-form" class="auth-form hidden">
+          <input type="text" name="name" placeholder="Full Name" required>
+          <input type="email" name="email" placeholder="Email" required>
+          <input type="password" name="password" placeholder="Password (min 6 chars)" required minlength="6">
+          <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+          <div class="form-error" id="register-error"></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="view hidden">
+      <div class="container">
+        <div class="section-header">
+          <h2>My Documents</h2>
+          <button id="upload-btn" class="btn btn-primary">Upload Document</button>
+        </div>
+
+        <div id="documents-list" class="documents-grid">
+          <div class="empty-state">No documents yet. Upload a PDF to get started.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- To Sign View -->
+    <div id="to-sign-view" class="view hidden">
+      <div class="container">
+        <h2>Documents to Sign</h2>
+        <div id="to-sign-list" class="documents-grid">
+          <div class="empty-state">No documents waiting for your signature.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Document Detail View -->
+    <div id="document-detail-view" class="view hidden">
+      <div class="container">
+        <button class="btn btn-sm back-btn" id="back-to-dashboard">&larr; Back</button>
+        <div id="document-detail"></div>
+      </div>
+    </div>
+
+    <!-- Signing View -->
+    <div id="signing-view" class="view hidden">
+      <div class="signing-container">
+        <div id="signing-header"></div>
+        <div class="signing-body">
+          <div class="pdf-viewer">
+            <iframe id="pdf-frame" title="Document PDF"></iframe>
+          </div>
+          <div class="signature-panel">
+            <h3>Your Signature</h3>
+            <div class="sig-tabs">
+              <button class="sig-tab active" data-sig="draw">Draw</button>
+              <button class="sig-tab" data-sig="type">Type</button>
+            </div>
+            <div id="sig-draw-panel" class="sig-panel">
+              <canvas id="signature-canvas" width="400" height="150"></canvas>
+              <button class="btn btn-sm" id="clear-canvas">Clear</button>
+            </div>
+            <div id="sig-type-panel" class="sig-panel hidden">
+              <input type="text" id="typed-signature" placeholder="Type your full name" class="sig-input">
+              <div id="typed-preview" class="typed-preview"></div>
+            </div>
+            <div class="sig-actions">
+              <button class="btn btn-primary btn-full" id="submit-signature">Sign Document</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="upload-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Upload Document</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <form id="upload-form">
+          <input type="text" name="title" placeholder="Document title" required>
+          <div class="file-drop" id="file-drop">
+            <p>Drop a PDF here or click to select</p>
+            <input type="file" name="document" accept=".pdf" id="file-input">
+          </div>
+          <div id="file-name" class="file-name"></div>
+          <button type="submit" class="btn btn-primary btn-full" id="upload-submit" disabled>Upload</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Send for Signature Modal -->
+    <div id="send-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Send for Signature</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <form id="send-form">
+          <div id="signers-list">
+            <div class="signer-row">
+              <input type="text" placeholder="Name" class="signer-name" required>
+              <input type="email" placeholder="Email" class="signer-email" required>
+              <button type="button" class="btn btn-sm remove-signer" title="Remove">&times;</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm" id="add-signer">+ Add Signer</button>
+          <button type="submit" class="btn btn-primary btn-full" style="margin-top: 16px;">Send</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

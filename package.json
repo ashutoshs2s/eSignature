@@ -1,0 +1,19 @@
+{
+  "name": "esignature-app",
+  "version": "1.0.0",
+  "description": "A full-stack eSignature application for uploading, signing, and managing documents",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "better-sqlite3": "^11.7.0",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "multer": "^1.4.5-lts.1",
+    "pdf-lib": "^1.17.1",
+    "uuid": "^11.0.3"
+  }
+}
