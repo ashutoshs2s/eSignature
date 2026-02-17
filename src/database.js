@@ -18,7 +18,22 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     password_hash TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user',
+    is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS invitations (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user',
+    token TEXT UNIQUE NOT NULL,
+    invited_by INTEGER NOT NULL,
+    accepted INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    expires_at TEXT NOT NULL,
+    FOREIGN KEY (invited_by) REFERENCES users(id)
   );
 
   CREATE TABLE IF NOT EXISTS documents (

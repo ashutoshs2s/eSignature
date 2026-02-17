@@ -6,6 +6,7 @@ const fs = require('fs');
 const authRoutes = require('./routes/auth');
 const documentRoutes = require('./routes/documents');
 const signRoutes = require('./routes/sign');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -33,6 +34,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/sign', signRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Serve the main app for any non-API route
 app.get('*', (req, res) => {
@@ -42,7 +44,7 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`eSignature app running at http://localhost:${PORT}`);
+  console.log(`BuyerForesight eSign running at http://localhost:${PORT}`);
 });
 
 module.exports = app;

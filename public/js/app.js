@@ -5,6 +5,7 @@ let signingToken = null;
 let signatureMode = 'draw';
 let isDrawing = false;
 let canvasCtx = null;
+let inviteToken = null; // from URL /invite/:token
 
 // ==================== API Helpers ====================
 async function api(url, options = {}) {
@@ -52,13 +53,41 @@ async function checkAuth() {
     currentUser = await api('/api/auth/me');
     showApp();
   } catch {
+    await checkSetupStatus();
     showView('auth-view');
+  }
+}
+
+async function checkSetupStatus() {
+  try {
+    const { needs_setup } = await api('/api/auth/setup-status');
+    const registerForm = document.getElementById('register-form');
+    const registerTab = document.querySelector('[data-tab="register"]');
+    const inviteNotice = document.getElementById('invite-notice');
+
+    if (needs_setup) {
+      // First user — show register tab with "Create Admin Account" label
+      registerTab.textContent = 'Setup';
+      document.querySelector('#register-form button[type="submit"]').textContent = 'Create Admin Account';
+      if (inviteNotice) inviteNotice.classList.add('hidden');
+    } else if (!inviteToken) {
+      // No invite token — show notice that registration is invite-only
+      if (inviteNotice) inviteNotice.classList.remove('hidden');
+    }
+  } catch {
+    // ignore
   }
 }
 
 function showApp() {
   document.getElementById('header').classList.remove('hidden');
   document.getElementById('user-name').textContent = currentUser.name;
+
+  // Show admin nav if admin
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.classList.toggle('hidden', currentUser.role !== 'admin');
+  });
+
   showView('dashboard-view');
   loadDocuments();
 }
@@ -101,14 +130,23 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
   const errorEl = document.getElementById('register-error');
   errorEl.textContent = '';
   try {
+    const body = {
+      name: form.name.value,
+      email: form.email.value,
+      password: form.password.value
+    };
+    if (inviteToken) {
+      body.invite_token = inviteToken;
+    }
     currentUser = await api('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify({
-        name: form.name.value,
-        email: form.email.value,
-        password: form.password.value
-      })
+      body: JSON.stringify(body)
     });
+    // Clear invite token from URL
+    if (inviteToken) {
+      window.history.replaceState({}, '', '/');
+      inviteToken = null;
+    }
     showApp();
   } catch (err) {
     errorEl.textContent = err.message;
@@ -135,6 +173,9 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     } else if (view === 'to-sign') {
       showView('to-sign-view');
       loadToSign();
+    } else if (view === 'admin') {
+      showView('admin-view');
+      loadAdminPanel();
     }
   });
 });
@@ -422,15 +463,53 @@ async function openSigning(token) {
   }
 }
 
-// Check for signing URL on page load
-function checkSigningUrl() {
+// Check for special URLs on page load
+function checkSpecialUrl() {
   const path = window.location.pathname;
-  const match = path.match(/^\/sign\/(.+)$/);
-  if (match) {
-    openSigning(match[1]);
+
+  // Signing URL: /sign/:token
+  const signMatch = path.match(/^\/sign\/(.+)$/);
+  if (signMatch) {
+    openSigning(signMatch[1]);
     return true;
   }
+
+  // Invite URL: /invite/:token
+  const inviteMatch = path.match(/^\/invite\/(.+)$/);
+  if (inviteMatch) {
+    handleInviteUrl(inviteMatch[1]);
+    return true;
+  }
+
   return false;
+}
+
+async function handleInviteUrl(token) {
+  try {
+    const invite = await api(`/api/auth/invite/${token}`);
+    inviteToken = token;
+
+    // Show register form pre-filled with invite data
+    showView('auth-view');
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('[data-tab="register"]').classList.add('active');
+    document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('register-form').classList.remove('hidden');
+
+    // Pre-fill
+    const form = document.getElementById('register-form');
+    form.name.value = invite.name;
+    form.email.value = invite.email;
+    form.email.readOnly = true;
+
+    document.querySelector('#register-form button[type="submit"]').textContent = 'Accept Invitation & Create Account';
+
+    const inviteNotice = document.getElementById('invite-notice');
+    if (inviteNotice) inviteNotice.classList.add('hidden');
+  } catch (err) {
+    toast('Invalid or expired invitation link', 'error');
+    showView('auth-view');
+  }
 }
 
 // Signature tabs
@@ -454,7 +533,7 @@ function initCanvas() {
   canvas.width = rect.width;
   canvas.height = rect.height;
 
-  canvasCtx.strokeStyle = '#00008b';
+  canvasCtx.strokeStyle = '#4C1D95';
   canvasCtx.lineWidth = 2.5;
   canvasCtx.lineCap = 'round';
   canvasCtx.lineJoin = 'round';
@@ -551,6 +630,247 @@ document.getElementById('submit-signature').addEventListener('click', async () =
   }
 });
 
+// ==================== Admin Panel ====================
+async function loadAdminPanel() {
+  loadAdminStats();
+  loadAdminUsers();
+  loadAdminInvitations();
+  loadAdminDocuments();
+}
+
+async function loadAdminStats() {
+  try {
+    const stats = await api('/api/admin/stats');
+    document.getElementById('admin-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-value">${stats.users}</div><div class="stat-label">Total Users</div></div>
+      <div class="stat-card"><div class="stat-value">${stats.activeUsers}</div><div class="stat-label">Active Users</div></div>
+      <div class="stat-card"><div class="stat-value">${stats.documents}</div><div class="stat-label">Documents</div></div>
+      <div class="stat-card"><div class="stat-value">${stats.pendingSignatures}</div><div class="stat-label">Pending Signatures</div></div>
+      <div class="stat-card"><div class="stat-value">${stats.completedDocuments}</div><div class="stat-label">Completed</div></div>
+      <div class="stat-card"><div class="stat-value">${stats.pendingInvitations}</div><div class="stat-label">Pending Invites</div></div>
+    `;
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function loadAdminUsers() {
+  try {
+    const users = await api('/api/admin/users');
+    document.getElementById('admin-users-list').innerHTML = users.length === 0
+      ? '<div class="empty-state">No users yet.</div>'
+      : `<table class="admin-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Documents</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody>${users.map(u => `
+            <tr>
+              <td>${escapeHtml(u.name)}</td>
+              <td>${escapeHtml(u.email)}</td>
+              <td><span class="role-badge role-${u.role}">${u.role}</span></td>
+              <td><span class="${u.is_active ? 'status-active' : 'status-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+              <td>${u.document_count}</td>
+              <td>${formatDate(u.created_at)}</td>
+              <td>
+                ${u.id !== currentUser.id ? `
+                  <button class="btn btn-sm" onclick="toggleUserRole(${u.id}, '${u.role}')">${u.role === 'admin' ? 'Make User' : 'Make Admin'}</button>
+                  <button class="btn btn-sm" onclick="toggleUserStatus(${u.id}, ${u.is_active})">${u.is_active ? 'Deactivate' : 'Activate'}</button>
+                  <button class="btn btn-sm" onclick="openResetPassword(${u.id}, '${escapeHtml(u.name)}')">Reset PW</button>
+                ` : '<span style="color:var(--gray-500);font-size:12px;">You</span>'}
+              </td>
+            </tr>
+          `).join('')}</tbody>
+        </table>`;
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function loadAdminInvitations() {
+  try {
+    const invites = await api('/api/admin/invitations');
+    document.getElementById('admin-invitations-list').innerHTML = invites.length === 0
+      ? '<div class="empty-state">No invitations sent yet.</div>'
+      : `<table class="admin-table">
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Invited By</th><th>Expires</th><th>Actions</th></tr></thead>
+          <tbody>${invites.map(inv => {
+            const expired = new Date(inv.expires_at) < new Date();
+            const status = inv.accepted ? 'Accepted' : (expired ? 'Expired' : 'Pending');
+            return `
+              <tr>
+                <td>${escapeHtml(inv.name)}</td>
+                <td>${escapeHtml(inv.email)}</td>
+                <td><span class="role-badge role-${inv.role}">${inv.role}</span></td>
+                <td><span class="${inv.accepted ? 'status-active' : (expired ? 'status-inactive' : '')}">${status}</span></td>
+                <td>${escapeHtml(inv.invited_by_name)}</td>
+                <td>${formatDate(inv.expires_at)}</td>
+                <td>
+                  ${!inv.accepted && !expired ? `
+                    <button class="btn btn-sm" onclick="copyToClipboard('${window.location.origin}/invite/${inv.token}')">Copy Link</button>
+                    <button class="btn btn-sm btn-danger" onclick="revokeInvitation('${inv.id}')">Revoke</button>
+                  ` : ''}
+                </td>
+              </tr>
+            `;
+          }).join('')}</tbody>
+        </table>`;
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function loadAdminDocuments() {
+  try {
+    const docs = await api('/api/admin/documents');
+    const container = document.getElementById('admin-documents-list');
+
+    if (docs.length === 0) {
+      container.innerHTML = '<div class="empty-state">No documents in the system.</div>';
+      return;
+    }
+
+    container.innerHTML = docs.map(doc => `
+      <div class="doc-card">
+        <div class="doc-card-header">
+          <h3>${escapeHtml(doc.title)}</h3>
+          <span class="status-badge status-${doc.status}">${doc.status}</span>
+        </div>
+        <div class="meta">Owner: ${escapeHtml(doc.owner_name)} (${escapeHtml(doc.owner_email)})</div>
+        <div class="meta">${escapeHtml(doc.filename)}</div>
+        <div class="meta">Uploaded ${formatDate(doc.created_at)}</div>
+        ${doc.total_signers > 0 ? `
+          <div class="progress-bar">
+            <div class="fill" style="width: ${(doc.signed_count / doc.total_signers) * 100}%"></div>
+          </div>
+          <div class="meta">${doc.signed_count} of ${doc.total_signers} signed</div>
+        ` : ''}
+      </div>
+    `).join('');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+// Admin actions
+async function toggleUserRole(userId, currentRole) {
+  const newRole = currentRole === 'admin' ? 'user' : 'admin';
+  if (!confirm(`Change this user's role to ${newRole}?`)) return;
+  try {
+    await api(`/api/admin/users/${userId}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role: newRole })
+    });
+    toast('Role updated', 'success');
+    loadAdminUsers();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function toggleUserStatus(userId, isActive) {
+  const action = isActive ? 'deactivate' : 'activate';
+  if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+  try {
+    await api(`/api/admin/users/${userId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_active: !isActive })
+    });
+    toast(`User ${action}d`, 'success');
+    loadAdminUsers();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+function openResetPassword(userId, userName) {
+  document.getElementById('reset-pw-user-id').value = userId;
+  document.getElementById('reset-pw-user-label').textContent = `Resetting password for: ${userName}`;
+  showModal('reset-pw-modal');
+}
+
+document.getElementById('reset-pw-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const userId = document.getElementById('reset-pw-user-id').value;
+  const password = e.target.password.value;
+  try {
+    await api(`/api/admin/users/${userId}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ password })
+    });
+    toast('Password reset successfully', 'success');
+    hideModal('reset-pw-modal');
+    e.target.reset();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+});
+
+async function revokeInvitation(inviteId) {
+  if (!confirm('Revoke this invitation?')) return;
+  try {
+    await api(`/api/admin/invitations/${inviteId}`, { method: 'DELETE' });
+    toast('Invitation revoked', 'success');
+    loadAdminInvitations();
+    loadAdminStats();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+// Admin tabs
+document.querySelectorAll('.admin-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.adminTab;
+    document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.add('hidden'));
+    document.getElementById(`admin-${target}-tab`).classList.remove('hidden');
+  });
+});
+
+// Invite user modal
+document.getElementById('invite-user-btn').addEventListener('click', () => {
+  document.getElementById('invite-result').classList.add('hidden');
+  document.getElementById('invite-form').reset();
+  showModal('invite-modal');
+});
+document.getElementById('invite-user-btn-2').addEventListener('click', () => {
+  document.getElementById('invite-result').classList.add('hidden');
+  document.getElementById('invite-form').reset();
+  showModal('invite-modal');
+});
+
+document.getElementById('invite-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  try {
+    const result = await api('/api/admin/invite', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: form.name.value,
+        email: form.email.value,
+        role: form.role.value
+      })
+    });
+
+    const inviteLink = `${window.location.origin}/invite/${result.token}`;
+    const resultEl = document.getElementById('invite-result');
+    resultEl.classList.remove('hidden');
+    resultEl.innerHTML = `
+      <p style="font-size:14px;color:var(--success);margin-bottom:8px;">Invitation created!</p>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:8px;">Share this link with ${escapeHtml(result.name)}:</p>
+      <div class="invite-link-box">
+        <a href="${inviteLink}">${inviteLink}</a>
+        <button class="copy-btn" onclick="copyToClipboard('${inviteLink}')" style="display:block;margin-top:8px;">Copy Link</button>
+      </div>
+      <p style="font-size:12px;color:var(--gray-500);margin-top:8px;">Expires: ${formatDate(result.expires_at)}</p>
+    `;
+
+    loadAdminInvitations();
+    loadAdminStats();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+});
+
 // ==================== Modals ====================
 document.querySelectorAll('.modal-close').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -573,6 +893,6 @@ function escapeHtml(str) {
 }
 
 // ==================== Init ====================
-if (!checkSigningUrl()) {
+if (!checkSpecialUrl()) {
   checkAuth();
 }

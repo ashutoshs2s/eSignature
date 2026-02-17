@@ -104,7 +104,7 @@ router.post('/:token/submit', async (req, res) => {
         y: 80 + sigOffset,
         size: 24,
         font,
-        color: rgb(0, 0, 0.6)
+        color: rgb(0.357, 0.129, 0.714)
       });
       // Draw label
       const labelFont = await pdfDoc.embedFont(StandardFonts.Helvetica);

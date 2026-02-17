@@ -1,7 +1,7 @@
 {
-  "name": "esignature-app",
+  "name": "buyerforesight-esign",
   "version": "1.0.0",
-  "description": "A full-stack eSignature application for uploading, signing, and managing documents",
+  "description": "BuyerForesight eSign - Secure document signing platform",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

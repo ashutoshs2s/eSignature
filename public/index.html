@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>eSignature</title>
+  <title>BuyerForesight eSign</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -11,10 +11,18 @@
     <!-- Header -->
     <header id="header" class="hidden">
       <div class="header-inner">
-        <div class="logo">eSignature</div>
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 100 120" width="28" height="34">
+            <path d="M0,8 Q0,0 8,0 L80,0 Q100,0 100,20 L100,40 Q100,60 80,60 Q100,60 100,80 L100,108 Q100,120 88,120 L8,120 Q0,120 0,112 Z" fill="#5B21B6"/>
+            <polygon points="0,22 0,48 62,82 62,56" fill="white"/>
+            <polygon points="0,50 0,76 62,110 62,84" fill="white"/>
+          </svg>
+          <span>BuyerForesight <em>eSign</em></span>
+        </div>
         <nav>
           <button class="nav-btn active" data-view="dashboard">Dashboard</button>
           <button class="nav-btn" data-view="to-sign">To Sign</button>
+          <button class="nav-btn admin-only hidden" data-view="admin">Admin</button>
         </nav>
         <div class="header-right">
           <span id="user-name"></span>
@@ -26,8 +34,15 @@
     <!-- Auth View -->
     <div id="auth-view" class="view">
       <div class="auth-container">
-        <h1>eSignature</h1>
-        <p class="subtitle">Simple, secure document signing</p>
+        <div class="auth-logo">
+          <svg viewBox="0 0 100 120" width="56" height="68">
+            <path d="M0,8 Q0,0 8,0 L80,0 Q100,0 100,20 L100,40 Q100,60 80,60 Q100,60 100,80 L100,108 Q100,120 88,120 L8,120 Q0,120 0,112 Z" fill="#5B21B6"/>
+            <polygon points="0,22 0,48 62,82 62,56" fill="white"/>
+            <polygon points="0,50 0,76 62,110 62,84" fill="white"/>
+          </svg>
+        </div>
+        <h1>BuyerForesight <em>eSign</em></h1>
+        <p class="subtitle">Secure document signing for your team</p>
 
         <div class="tab-bar">
           <button class="tab active" data-tab="login">Login</button>
@@ -48,6 +63,9 @@
           <button type="submit" class="btn btn-primary btn-full">Create Account</button>
           <div class="form-error" id="register-error"></div>
         </form>
+        <div id="invite-notice" class="invite-only-notice hidden">
+          Registration is by invitation only. Contact your admin for access.
+        </div>
       </div>
     </div>
 
@@ -110,6 +128,83 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Admin View -->
+    <div id="admin-view" class="view hidden">
+      <div class="container">
+        <h2>Admin Panel</h2>
+
+        <!-- Stats -->
+        <div id="admin-stats" class="stats-grid"></div>
+
+        <!-- Admin Tabs -->
+        <div class="admin-tabs">
+          <button class="admin-tab active" data-admin-tab="users">Users</button>
+          <button class="admin-tab" data-admin-tab="invitations">Invitations</button>
+          <button class="admin-tab" data-admin-tab="all-documents">All Documents</button>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="admin-users-tab" class="admin-tab-content">
+          <div class="section-header">
+            <h3>Users</h3>
+            <button class="btn btn-primary" id="invite-user-btn">Invite User</button>
+          </div>
+          <div id="admin-users-list"></div>
+        </div>
+
+        <!-- Invitations Tab -->
+        <div id="admin-invitations-tab" class="admin-tab-content hidden">
+          <div class="section-header">
+            <h3>Invitations</h3>
+            <button class="btn btn-primary" id="invite-user-btn-2">Invite User</button>
+          </div>
+          <div id="admin-invitations-list"></div>
+        </div>
+
+        <!-- All Documents Tab -->
+        <div id="admin-all-documents-tab" class="admin-tab-content hidden">
+          <h3>All Documents</h3>
+          <div id="admin-documents-list" class="documents-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invite User Modal -->
+    <div id="invite-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Invite User</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <form id="invite-form">
+          <input type="text" name="name" placeholder="Full Name" required>
+          <input type="email" name="email" placeholder="Email" required>
+          <select name="role" class="select-input">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button type="submit" class="btn btn-primary btn-full">Send Invitation</button>
+        </form>
+        <div id="invite-result" class="hidden" style="margin-top:16px;"></div>
+      </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div id="reset-pw-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Reset Password</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <form id="reset-pw-form">
+          <input type="hidden" name="user_id" id="reset-pw-user-id">
+          <p id="reset-pw-user-label" style="margin-bottom:12px;color:var(--gray-500);font-size:14px;"></p>
+          <input type="password" name="password" placeholder="New password (min 6 chars)" required minlength="6">
+          <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px;">Reset Password</button>
+        </form>
       </div>
     </div>
 
