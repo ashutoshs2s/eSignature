@@ -43,7 +43,7 @@ app.use(session({
   cookie: {
     maxAge: 24 * 60 * 60 * 1000,
     secure: isProduction,
-    sameSite: process.env.CORS_ORIGIN ? 'none' : 'lax'
+    sameSite: 'lax'
   }
 }));
 
