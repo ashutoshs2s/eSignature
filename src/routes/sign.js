@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const db = require('../database');
+const { sendSignedNotification, sendDeclinedNotification, sendCompletionNotification, sendNextSignerNotification } = require('../email');
 
 const router = express.Router();
 
@@ -172,11 +173,30 @@ router.post('/:token/complete', (req, res) => {
     "SELECT COUNT(*) as count FROM recipients WHERE envelope_id = ? AND role = 'signer' AND status != 'signed'"
   ).get(recipient.envelope_id);
 
-  if (pendingSigners.count === 0) {
+  // Get envelope and sender info for emails
+  const envelope = db.prepare('SELECT * FROM envelopes WHERE id = ?').get(recipient.envelope_id);
+  const owner = db.prepare('SELECT name, email FROM users WHERE id = ?').get(envelope.owner_id);
+  const totalSigners = db.prepare("SELECT COUNT(*) as count FROM recipients WHERE envelope_id = ? AND role = 'signer'").get(recipient.envelope_id).count;
+  const signedCount = db.prepare("SELECT COUNT(*) as count FROM recipients WHERE envelope_id = ? AND role = 'signer' AND status = 'signed'").get(recipient.envelope_id).count;
+  const APP_URL = process.env.APP_URL || 'https://sign.datastacksignal.com';
+  const allSigned = pendingSigners.count === 0;
+
+  if (allSigned) {
     db.prepare("UPDATE envelopes SET status = 'completed', completed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?")
       .run(recipient.envelope_id);
     db.prepare(`INSERT INTO audit_log (envelope_id, action, actor, details, ip_address) VALUES (?, 'completed', 'system', 'All signers have signed', ?)`)
       .run(recipient.envelope_id, req.ip);
+
+    // Notify all signers that envelope is complete
+    const allSigners = db.prepare("SELECT name, email FROM recipients WHERE envelope_id = ? AND role = 'signer'").all(recipient.envelope_id);
+    for (const s of allSigners) {
+      sendCompletionNotification({
+        recipientName: s.name,
+        recipientEmail: s.email,
+        envelopeTitle: envelope.title,
+        senderName: owner.name
+      }).catch(err => console.error('Failed to send completion email:', err));
+    }
   } else {
     // Advance to next signer
     const nextSigners = db.prepare(`
@@ -187,8 +207,31 @@ router.post('/:token/complete', (req, res) => {
     if (nextSigners.length > 0) {
       db.prepare("UPDATE recipients SET status = 'sent' WHERE envelope_id = ? AND order_num = ? AND status = 'pending'")
         .run(recipient.envelope_id, nextSigners[0].order_num);
+
+      // Email next signer
+      const next = nextSigners[0];
+      sendNextSignerNotification({
+        recipientName: next.name,
+        recipientEmail: next.email,
+        senderName: owner.name,
+        senderEmail: owner.email,
+        envelopeTitle: envelope.title,
+        signingUrl: `${APP_URL}/sign/${next.token}`
+      }).catch(err => console.error('Failed to send next signer email:', err));
     }
   }
+
+  // Notify sender that this recipient signed
+  sendSignedNotification({
+    senderEmail: owner.email,
+    senderName: owner.name,
+    recipientName: recipient.name,
+    recipientEmail: recipient.email,
+    envelopeTitle: envelope.title,
+    allSigned,
+    totalSigners,
+    signedCount
+  }).catch(err => console.error('Failed to send signed notification:', err));
 
   res.json({ message: 'Signing completed successfully' });
 });
@@ -213,6 +256,18 @@ router.post('/:token/decline', (req, res) => {
 
   db.prepare(`INSERT INTO audit_log (envelope_id, action, actor, details, ip_address) VALUES (?, 'declined', ?, ?, ?)`)
     .run(recipient.envelope_id, recipient.email, reason || 'Declined without reason', req.ip);
+
+  // Notify sender of decline
+  const envelope = db.prepare('SELECT * FROM envelopes WHERE id = ?').get(recipient.envelope_id);
+  const owner = db.prepare('SELECT name, email FROM users WHERE id = ?').get(envelope.owner_id);
+  sendDeclinedNotification({
+    senderEmail: owner.email,
+    senderName: owner.name,
+    recipientName: recipient.name,
+    recipientEmail: recipient.email,
+    envelopeTitle: envelope.title,
+    reason: reason || 'No reason provided'
+  }).catch(err => console.error('Failed to send decline notification:', err));
 
   res.json({ message: 'Signing declined' });
 });

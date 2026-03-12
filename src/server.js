@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
@@ -21,6 +22,14 @@ if (isProduction) {
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+// CORS — allow external frontends (e.g. Lovable) to connect
+if (process.env.CORS_ORIGIN) {
+  app.use(cors({
+    origin: process.env.CORS_ORIGIN.split(',').map(s => s.trim()),
+    credentials: true
+  }));
 }
 
 // Middleware

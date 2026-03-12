@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const db = require('../database');
 const { requireAuth } = require('../middleware/auth');
+const { sendSigningInvitation, sendReminderEmail } = require('../email');
 
 const router = express.Router();
 
@@ -172,6 +173,23 @@ router.post('/:id/send', requireAuth, (req, res) => {
   // Return signing links for all recipients
   const allRecipients = db.prepare("SELECT id, name, email, role, token, order_num, status FROM recipients WHERE envelope_id = ? ORDER BY order_num").all(envelope.id);
 
+  // Send emails to first-round signers (non-blocking)
+  const owner = db.prepare('SELECT name, email FROM users WHERE id = ?').get(req.session.userId);
+  const APP_URL = process.env.APP_URL || 'https://sign.datastacksignal.com';
+
+  const firstRoundRecipients = allRecipients.filter(r => r.status === 'sent' && r.role === 'signer');
+  for (const r of firstRoundRecipients) {
+    sendSigningInvitation({
+      recipientName: r.name,
+      recipientEmail: r.email,
+      senderName: owner.name,
+      senderEmail: owner.email,
+      envelopeTitle: envelope.title,
+      message: envelope.message,
+      signingUrl: `${APP_URL}/sign/${r.token}`
+    }).catch(err => console.error('Failed to send invitation email:', err));
+  }
+
   res.json({ message: 'Envelope sent', recipients: allRecipients });
 });
 
@@ -203,6 +221,18 @@ router.post('/:id/resend/:recipientId', requireAuth, (req, res) => {
 
   db.prepare(`INSERT INTO audit_log (envelope_id, action, actor, details, ip_address) VALUES (?, 'reminder_sent', ?, ?, ?)`)
     .run(envelope.id, req.session.userEmail, `Reminder sent to ${recipient.email}`, req.ip);
+
+  // Send reminder email (non-blocking)
+  const owner = db.prepare('SELECT name, email FROM users WHERE id = ?').get(req.session.userId);
+  const APP_URL = process.env.APP_URL || 'https://sign.datastacksignal.com';
+  sendReminderEmail({
+    recipientName: recipient.name,
+    recipientEmail: recipient.email,
+    senderName: owner.name,
+    senderEmail: owner.email,
+    envelopeTitle: envelope.title,
+    signingUrl: `${APP_URL}/sign/${recipient.token}`
+  }).catch(err => console.error('Failed to send reminder email:', err));
 
   res.json({ message: 'Reminder sent', token: recipient.token });
 });
