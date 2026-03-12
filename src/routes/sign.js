@@ -1,178 +1,220 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const db = require('../database');
 
 const router = express.Router();
 
-// Get signing page data via token
+// Get signing session data
 router.get('/:token', (req, res) => {
-  const request = db.prepare(`
-    SELECT sr.*, d.title, d.filename, d.id as document_id, u.name as sender_name, u.email as sender_email
-    FROM signature_requests sr
-    JOIN documents d ON sr.document_id = d.id
-    JOIN users u ON d.owner_id = u.id
-    WHERE sr.token = ?
+  const recipient = db.prepare(`
+    SELECT r.*, e.title as envelope_title, e.message as envelope_message, e.status as envelope_status,
+           u.name as sender_name, u.email as sender_email
+    FROM recipients r
+    JOIN envelopes e ON r.envelope_id = e.id
+    JOIN users u ON e.owner_id = u.id
+    WHERE r.token = ?
   `).get(req.params.token);
 
-  if (!request) {
-    return res.status(404).json({ error: 'Invalid signing link' });
+  if (!recipient) return res.status(404).json({ error: 'Invalid signing link' });
+
+  if (recipient.envelope_status === 'voided') {
+    return res.status(400).json({ error: 'This envelope has been voided by the sender' });
+  }
+  if (recipient.status === 'signed') {
+    return res.status(400).json({ error: 'You have already signed this document', signed_at: recipient.signed_at });
+  }
+  if (recipient.status === 'declined') {
+    return res.status(400).json({ error: 'You have declined this document' });
+  }
+  if (recipient.status === 'pending') {
+    return res.status(400).json({ error: 'It is not your turn to sign yet. Please wait for previous signers.' });
   }
 
-  if (request.status === 'signed') {
-    return res.status(400).json({ error: 'Document already signed', signed_at: request.signed_at });
+  // Check access code
+  if (recipient.access_code) {
+    const providedCode = req.query.access_code;
+    if (!providedCode) {
+      return res.json({ requires_access_code: true, recipient_name: recipient.name });
+    }
+    if (providedCode !== recipient.access_code) {
+      return res.status(403).json({ error: 'Invalid access code' });
+    }
   }
+
+  // Mark as viewed
+  if (!recipient.viewed_at) {
+    db.prepare("UPDATE recipients SET status = 'delivered', viewed_at = datetime('now') WHERE id = ?")
+      .run(recipient.id);
+    db.prepare(`INSERT INTO audit_log (envelope_id, action, actor, details, ip_address) VALUES (?, 'viewed', ?, 'Document viewed', ?)`)
+      .run(recipient.envelope_id, recipient.email, req.ip);
+  }
+
+  // Get documents
+  const documents = db.prepare('SELECT id, title, filename, page_count, order_num FROM envelope_documents WHERE envelope_id = ? ORDER BY order_num')
+    .all(recipient.envelope_id);
+
+  // Get fields for this recipient
+  const fields = db.prepare('SELECT * FROM fields WHERE envelope_id = ? AND recipient_id = ?')
+    .all(recipient.envelope_id, recipient.id);
+
+  // Get already-filled field values (from other signers) for display
+  const otherFields = db.prepare(`
+    SELECT f.id, f.type, f.page_number, f.x, f.y, f.width, f.height, f.value, f.document_id,
+           s.signature_data, s.signature_type
+    FROM fields f
+    LEFT JOIN signatures s ON s.field_id = f.id
+    JOIN recipients r ON f.recipient_id = r.id
+    WHERE f.envelope_id = ? AND f.recipient_id != ? AND r.status = 'signed'
+  `).all(recipient.envelope_id, recipient.id);
 
   res.json({
-    request_id: request.id,
-    document_title: request.title,
-    document_filename: request.filename,
-    signer_name: request.signer_name,
-    signer_email: request.signer_email,
-    sender_name: request.sender_name,
-    sender_email: request.sender_email
+    recipient_id: recipient.id,
+    recipient_name: recipient.name,
+    recipient_email: recipient.email,
+    envelope_title: recipient.envelope_title,
+    envelope_message: recipient.envelope_message,
+    sender_name: recipient.sender_name,
+    sender_email: recipient.sender_email,
+    documents,
+    fields,
+    completed_fields: otherFields
   });
 });
 
-// Get the PDF for viewing (via token)
-router.get('/:token/pdf', (req, res) => {
-  const request = db.prepare(`
-    SELECT sr.*, d.original_path, d.signed_path, d.filename
-    FROM signature_requests sr
-    JOIN documents d ON sr.document_id = d.id
-    WHERE sr.token = ?
-  `).get(req.params.token);
-
-  if (!request) {
-    return res.status(404).json({ error: 'Invalid signing link' });
-  }
-
-  const filePath = request.signed_path || request.original_path;
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'PDF file not found' });
-  }
-
-  res.setHeader('Content-Type', 'application/pdf');
-  res.sendFile(path.resolve(filePath));
+// Verify access code
+router.post('/:token/verify-code', (req, res) => {
+  const recipient = db.prepare('SELECT * FROM recipients WHERE token = ?').get(req.params.token);
+  if (!recipient) return res.status(404).json({ error: 'Invalid signing link' });
+  if (!recipient.access_code) return res.json({ valid: true });
+  if (req.body.code === recipient.access_code) return res.json({ valid: true });
+  return res.status(403).json({ error: 'Invalid access code' });
 });
 
-// Submit signature
-router.post('/:token/submit', async (req, res) => {
-  try {
-    const { signature_data, signature_type } = req.body;
+// Serve PDF for signing
+router.get('/:token/documents/:docId/pdf', (req, res) => {
+  const recipient = db.prepare(`
+    SELECT r.envelope_id FROM recipients r
+    JOIN envelopes e ON r.envelope_id = e.id
+    WHERE r.token = ? AND e.status IN ('sent', 'completed')
+  `).get(req.params.token);
 
-    if (!signature_data) {
-      return res.status(400).json({ error: 'Signature data is required' });
-    }
+  if (!recipient) return res.status(404).json({ error: 'Invalid signing link' });
 
-    const request = db.prepare(`
-      SELECT sr.*, d.original_path, d.signed_path, d.id as document_id
-      FROM signature_requests sr
-      JOIN documents d ON sr.document_id = d.id
-      WHERE sr.token = ?
-    `).get(req.params.token);
+  const doc = db.prepare('SELECT * FROM envelope_documents WHERE id = ? AND envelope_id = ?')
+    .get(req.params.docId, recipient.envelope_id);
 
-    if (!request) {
-      return res.status(404).json({ error: 'Invalid signing link' });
-    }
+  if (!doc || !fs.existsSync(doc.file_path)) return res.status(404).json({ error: 'Document not found' });
 
-    if (request.status === 'signed') {
-      return res.status(400).json({ error: 'Already signed' });
-    }
+  res.setHeader('Content-Type', 'application/pdf');
+  res.sendFile(path.resolve(doc.file_path));
+});
 
-    // Load the current PDF (use signed_path if other signers already signed, otherwise original)
-    const pdfPath = request.signed_path || request.original_path;
-    const pdfBytes = fs.readFileSync(pdfPath);
-    const pdfDoc = await PDFDocument.load(pdfBytes);
+// Fill a field value
+router.post('/:token/fields/:fieldId', (req, res) => {
+  const recipient = db.prepare(`
+    SELECT r.* FROM recipients r
+    JOIN envelopes e ON r.envelope_id = e.id
+    WHERE r.token = ? AND e.status = 'sent' AND r.status IN ('sent', 'delivered')
+  `).get(req.params.token);
 
-    const pages = pdfDoc.getPages();
-    const lastPage = pages[pages.length - 1];
-    const { height } = lastPage.getSize();
+  if (!recipient) return res.status(404).json({ error: 'Cannot sign at this time' });
 
-    // Count existing signatures on this document to offset vertical position
-    const existingSignatures = db.prepare(
-      'SELECT COUNT(*) as count FROM signatures WHERE request_id IN (SELECT id FROM signature_requests WHERE document_id = ?)'
-    ).get(request.document_id);
-    const sigOffset = existingSignatures.count * 60;
+  const field = db.prepare('SELECT * FROM fields WHERE id = ? AND recipient_id = ?')
+    .get(req.params.fieldId, recipient.id);
 
-    if (signature_type === 'type') {
-      // Typed signature
-      const font = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
-      lastPage.drawText(signature_data, {
-        x: 50,
-        y: 80 + sigOffset,
-        size: 24,
-        font,
-        color: rgb(0.357, 0.129, 0.714)
-      });
-      // Draw label
-      const labelFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      lastPage.drawText(`Signed by: ${request.signer_name} (${request.signer_email}) - ${new Date().toISOString()}`, {
-        x: 50,
-        y: 60 + sigOffset,
-        size: 8,
-        font: labelFont,
-        color: rgb(0.4, 0.4, 0.4)
-      });
-    } else {
-      // Drawn signature — signature_data is a base64 PNG
-      const sigImageData = signature_data.replace(/^data:image\/png;base64,/, '');
-      const sigImage = await pdfDoc.embedPng(Buffer.from(sigImageData, 'base64'));
-      const sigDims = sigImage.scale(0.5);
-      lastPage.drawImage(sigImage, {
-        x: 50,
-        y: 50 + sigOffset,
-        width: Math.min(sigDims.width, 200),
-        height: Math.min(sigDims.height, 80)
-      });
-      // Draw label
-      const labelFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      lastPage.drawText(`Signed by: ${request.signer_name} (${request.signer_email}) - ${new Date().toISOString()}`, {
-        x: 50,
-        y: 40 + sigOffset,
-        size: 8,
-        font: labelFont,
-        color: rgb(0.4, 0.4, 0.4)
-      });
-    }
+  if (!field) return res.status(404).json({ error: 'Field not found' });
 
-    // Save signed PDF
-    const signedBytes = await pdfDoc.save();
-    const signedFilename = `signed_${request.document_id}.pdf`;
-    const signedPath = path.join(__dirname, '..', '..', 'uploads', signedFilename);
-    fs.writeFileSync(signedPath, signedBytes);
+  const { value, signature_data, signature_type } = req.body;
 
-    // Update database
-    db.prepare('INSERT INTO signatures (request_id, signature_data, signature_type, ip_address) VALUES (?, ?, ?, ?)')
-      .run(request.id, signature_type === 'type' ? signature_data : '[image data]', signature_type || 'draw', req.ip);
+  if (field.type === 'signature' || field.type === 'initials') {
+    if (!signature_data) return res.status(400).json({ error: 'Signature data required' });
 
-    db.prepare("UPDATE signature_requests SET status = 'signed', signed_at = datetime('now') WHERE id = ?")
-      .run(request.id);
+    db.prepare('DELETE FROM signatures WHERE field_id = ? AND recipient_id = ?').run(field.id, recipient.id);
+    db.prepare('INSERT INTO signatures (recipient_id, field_id, signature_data, signature_type, ip_address) VALUES (?, ?, ?, ?, ?)')
+      .run(recipient.id, field.id, signature_data, signature_type || 'draw', req.ip);
 
-    db.prepare("UPDATE documents SET signed_path = ?, updated_at = datetime('now') WHERE id = ?")
-      .run(signedPath, request.document_id);
-
-    // Check if all signers have signed
-    const pendingCount = db.prepare(
-      "SELECT COUNT(*) as count FROM signature_requests WHERE document_id = ? AND status = 'pending'"
-    ).get(request.document_id);
-
-    if (pendingCount.count === 0) {
-      db.prepare("UPDATE documents SET status = 'completed', updated_at = datetime('now') WHERE id = ?")
-        .run(request.document_id);
-    }
-
-    db.prepare(`
-      INSERT INTO audit_log (document_id, action, actor, details, ip_address)
-      VALUES (?, 'signed', ?, 'Document signed', ?)
-    `).run(request.document_id, request.signer_email, req.ip);
-
-    res.json({ message: 'Document signed successfully' });
-  } catch (err) {
-    console.error('Signing error:', err);
-    res.status(500).json({ error: 'Failed to apply signature' });
+    db.prepare('UPDATE fields SET value = ? WHERE id = ?').run(signature_type === 'type' ? signature_data : '[signed]', field.id);
+  } else {
+    db.prepare('UPDATE fields SET value = ? WHERE id = ?').run(value || '', field.id);
   }
+
+  res.json({ message: 'Field saved' });
+});
+
+// Complete signing
+router.post('/:token/complete', (req, res) => {
+  const recipient = db.prepare(`
+    SELECT r.* FROM recipients r
+    JOIN envelopes e ON r.envelope_id = e.id
+    WHERE r.token = ? AND e.status = 'sent' AND r.status IN ('sent', 'delivered')
+  `).get(req.params.token);
+
+  if (!recipient) return res.status(404).json({ error: 'Cannot complete signing' });
+
+  const unfilledRequired = db.prepare(`
+    SELECT COUNT(*) as count FROM fields
+    WHERE recipient_id = ? AND required = 1 AND (value IS NULL OR value = '')
+  `).get(recipient.id);
+
+  if (unfilledRequired.count > 0) {
+    return res.status(400).json({ error: `${unfilledRequired.count} required field(s) are not filled` });
+  }
+
+  db.prepare("UPDATE recipients SET status = 'signed', signed_at = datetime('now') WHERE id = ?")
+    .run(recipient.id);
+
+  db.prepare(`INSERT INTO audit_log (envelope_id, action, actor, details, ip_address) VALUES (?, 'signed', ?, 'Document signed', ?)`)
+    .run(recipient.envelope_id, recipient.email, req.ip);
+
+  // Check if all signers have completed
+  const pendingSigners = db.prepare(
+    "SELECT COUNT(*) as count FROM recipients WHERE envelope_id = ? AND role = 'signer' AND status != 'signed'"
+  ).get(recipient.envelope_id);
+
+  if (pendingSigners.count === 0) {
+    db.prepare("UPDATE envelopes SET status = 'completed', completed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?")
+      .run(recipient.envelope_id);
+    db.prepare(`INSERT INTO audit_log (envelope_id, action, actor, details, ip_address) VALUES (?, 'completed', 'system', 'All signers have signed', ?)`)
+      .run(recipient.envelope_id, req.ip);
+  } else {
+    // Advance to next signer
+    const nextSigners = db.prepare(`
+      SELECT * FROM recipients WHERE envelope_id = ? AND role = 'signer' AND status = 'pending'
+      ORDER BY order_num LIMIT 1
+    `).all(recipient.envelope_id);
+
+    if (nextSigners.length > 0) {
+      db.prepare("UPDATE recipients SET status = 'sent' WHERE envelope_id = ? AND order_num = ? AND status = 'pending'")
+        .run(recipient.envelope_id, nextSigners[0].order_num);
+    }
+  }
+
+  res.json({ message: 'Signing completed successfully' });
+});
+
+// Decline to sign
+router.post('/:token/decline', (req, res) => {
+  const recipient = db.prepare(`
+    SELECT r.* FROM recipients r
+    JOIN envelopes e ON r.envelope_id = e.id
+    WHERE r.token = ? AND e.status = 'sent' AND r.status IN ('sent', 'delivered')
+  `).get(req.params.token);
+
+  if (!recipient) return res.status(404).json({ error: 'Cannot decline at this time' });
+
+  const { reason } = req.body;
+
+  db.prepare("UPDATE recipients SET status = 'declined', decline_reason = ? WHERE id = ?")
+    .run(reason || 'No reason provided', recipient.id);
+
+  db.prepare("UPDATE envelopes SET status = 'declined', updated_at = datetime('now') WHERE id = ?")
+    .run(recipient.envelope_id);
+
+  db.prepare(`INSERT INTO audit_log (envelope_id, action, actor, details, ip_address) VALUES (?, 'declined', ?, ?, ?)`)
+    .run(recipient.envelope_id, recipient.email, reason || 'Declined without reason', req.ip);
+
+  res.json({ message: 'Signing declined' });
 });
 
 module.exports = router;

@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BuyerForesight eSign</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
   <div id="app">
     <!-- Header -->
     <header id="header" class="hidden">
       <div class="header-inner">
-        <div class="logo">
+        <div class="logo" onclick="navigate('dashboard')">
           <svg class="logo-icon" viewBox="0 0 100 120" width="28" height="34">
             <path d="M0,8 Q0,0 8,0 L80,0 Q100,0 100,20 L100,40 Q100,60 80,60 Q100,60 100,80 L100,108 Q100,120 88,120 L8,120 Q0,120 0,112 Z" fill="#5B21B6"/>
             <polygon points="0,22 0,48 62,82 62,56" fill="white"/>
@@ -21,10 +22,11 @@
         </div>
         <nav>
           <button class="nav-btn active" data-view="dashboard">Dashboard</button>
-          <button class="nav-btn" data-view="to-sign">To Sign</button>
+          <button class="nav-btn" data-view="inbox">Action Required</button>
           <button class="nav-btn admin-only hidden" data-view="admin">Admin</button>
         </nav>
         <div class="header-right">
+          <button class="btn btn-primary btn-sm" id="new-envelope-btn">+ New Envelope</button>
           <span id="user-name"></span>
           <button id="logout-btn" class="btn btn-sm">Logout</button>
         </div>
@@ -43,19 +45,16 @@
         </div>
         <h1>BuyerForesight <em>eSign</em></h1>
         <p class="subtitle">Secure document signing for your team</p>
-
         <div class="tab-bar">
           <button class="tab active" data-tab="login">Login</button>
           <button class="tab" data-tab="register">Register</button>
         </div>
-
         <form id="login-form" class="auth-form">
           <input type="email" name="email" placeholder="Email" required>
           <input type="password" name="password" placeholder="Password" required>
           <button type="submit" class="btn btn-primary btn-full">Login</button>
           <div class="form-error" id="login-error"></div>
         </form>
-
         <form id="register-form" class="auth-form hidden">
           <input type="text" name="name" placeholder="Full Name" required>
           <input type="email" name="email" placeholder="Email" required>
@@ -73,61 +72,180 @@
     <div id="dashboard-view" class="view hidden">
       <div class="container">
         <div class="section-header">
-          <h2>My Documents</h2>
-          <button id="upload-btn" class="btn btn-primary">Upload Document</button>
+          <h2>Envelopes</h2>
+          <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="draft">Draft</button>
+            <button class="filter-btn" data-filter="sent">Sent</button>
+            <button class="filter-btn" data-filter="completed">Completed</button>
+            <button class="filter-btn" data-filter="declined">Declined</button>
+            <button class="filter-btn" data-filter="voided">Voided</button>
+          </div>
         </div>
-
-        <div id="documents-list" class="documents-grid">
-          <div class="empty-state">No documents yet. Upload a PDF to get started.</div>
+        <div id="envelopes-list" class="envelope-list">
+          <div class="empty-state">No envelopes yet. Click "+ New Envelope" to get started.</div>
         </div>
       </div>
     </div>
 
-    <!-- To Sign View -->
-    <div id="to-sign-view" class="view hidden">
+    <!-- Inbox View -->
+    <div id="inbox-view" class="view hidden">
       <div class="container">
-        <h2>Documents to Sign</h2>
-        <div id="to-sign-list" class="documents-grid">
-          <div class="empty-state">No documents waiting for your signature.</div>
-        </div>
+        <h2>Action Required</h2>
+        <p class="view-subtitle">Documents waiting for your signature</p>
+        <div id="inbox-list" class="envelope-list"></div>
       </div>
     </div>
 
-    <!-- Document Detail View -->
-    <div id="document-detail-view" class="view hidden">
+    <!-- Envelope Detail View -->
+    <div id="envelope-detail-view" class="view hidden">
       <div class="container">
         <button class="btn btn-sm back-btn" id="back-to-dashboard">&larr; Back</button>
-        <div id="document-detail"></div>
+        <div id="envelope-detail"></div>
+      </div>
+    </div>
+
+    <!-- Envelope Wizard -->
+    <div id="wizard-view" class="view hidden">
+      <div class="wizard-container">
+        <div class="wizard-header">
+          <button class="btn btn-sm" id="wizard-cancel">&larr; Cancel</button>
+          <div class="wizard-steps">
+            <div class="wizard-step active" data-step="1"><span class="step-num">1</span> Upload</div>
+            <div class="wizard-step" data-step="2"><span class="step-num">2</span> Recipients</div>
+            <div class="wizard-step" data-step="3"><span class="step-num">3</span> Place Fields</div>
+            <div class="wizard-step" data-step="4"><span class="step-num">4</span> Review & Send</div>
+          </div>
+          <div style="width:80px;"></div>
+        </div>
+
+        <!-- Step 1: Upload Documents -->
+        <div class="wizard-panel" id="wizard-step-1">
+          <div class="wizard-form">
+            <h3>Add Documents</h3>
+            <input type="text" id="envelope-title" placeholder="Envelope title (e.g., NDA Agreement)" class="input-lg">
+            <textarea id="envelope-message" placeholder="Optional message to signers..." rows="2" class="input-lg"></textarea>
+            <div class="file-drop" id="wizard-file-drop">
+              <p>Drop PDFs here or click to upload</p>
+              <input type="file" id="wizard-file-input" accept=".pdf" multiple>
+            </div>
+            <div id="wizard-doc-list" class="doc-list"></div>
+            <div class="wizard-actions">
+              <div></div>
+              <button class="btn btn-primary" id="wizard-next-1" disabled>Next: Add Recipients</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Recipients -->
+        <div class="wizard-panel hidden" id="wizard-step-2">
+          <div class="wizard-form">
+            <h3>Add Recipients</h3>
+            <p class="help-text">Recipients sign in order. Drag to reorder.</p>
+            <div id="recipients-list" class="recipients-list"></div>
+            <div class="add-recipient-row">
+              <input type="text" id="new-recipient-name" placeholder="Full name">
+              <input type="email" id="new-recipient-email" placeholder="Email">
+              <select id="new-recipient-role" class="select-sm">
+                <option value="signer">Needs to Sign</option>
+                <option value="cc">Receives a Copy</option>
+              </select>
+              <button class="btn btn-primary btn-sm" id="add-recipient-btn">Add</button>
+            </div>
+            <div class="wizard-actions">
+              <button class="btn" id="wizard-prev-2">Back</button>
+              <button class="btn btn-primary" id="wizard-next-2" disabled>Next: Place Fields</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Place Fields -->
+        <div class="wizard-panel hidden" id="wizard-step-3">
+          <div class="field-editor">
+            <div class="field-sidebar">
+              <h4>Recipients</h4>
+              <div id="field-recipient-selector"></div>
+              <h4 style="margin-top:16px;">Fields</h4>
+              <div class="field-types">
+                <button class="field-type-btn" data-type="signature" draggable="true">✍ Signature</button>
+                <button class="field-type-btn" data-type="initials" draggable="true">AI Initials</button>
+                <button class="field-type-btn" data-type="date_signed" draggable="true">📅 Date Signed</button>
+                <button class="field-type-btn" data-type="text" draggable="true">T Text</button>
+                <button class="field-type-btn" data-type="name" draggable="true">👤 Name</button>
+                <button class="field-type-btn" data-type="email" draggable="true">@ Email</button>
+                <button class="field-type-btn" data-type="checkbox" draggable="true">☐ Checkbox</button>
+              </div>
+              <div class="field-sidebar-actions">
+                <button class="btn" id="wizard-prev-3">Back</button>
+                <button class="btn btn-primary" id="wizard-next-3">Next: Review</button>
+              </div>
+            </div>
+            <div class="field-canvas-area">
+              <div id="pdf-pages-container" class="pdf-pages"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Review & Send -->
+        <div class="wizard-panel hidden" id="wizard-step-4">
+          <div class="wizard-form">
+            <h3>Review & Send</h3>
+            <div id="review-summary" class="review-summary"></div>
+            <div class="wizard-actions">
+              <button class="btn" id="wizard-prev-4">Back</button>
+              <button class="btn btn-primary btn-lg" id="wizard-send">Send Envelope</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Signing View -->
     <div id="signing-view" class="view hidden">
-      <div class="signing-container">
-        <div id="signing-header"></div>
-        <div class="signing-body">
-          <div class="pdf-viewer">
-            <iframe id="pdf-frame" title="Document PDF"></iframe>
+      <div class="signing-chrome">
+        <div class="signing-topbar">
+          <div class="logo">
+            <svg class="logo-icon" viewBox="0 0 100 120" width="24" height="28">
+              <path d="M0,8 Q0,0 8,0 L80,0 Q100,0 100,20 L100,40 Q100,60 80,60 Q100,60 100,80 L100,108 Q100,120 88,120 L8,120 Q0,120 0,112 Z" fill="#5B21B6"/>
+              <polygon points="0,22 0,48 62,82 62,56" fill="white"/>
+              <polygon points="0,50 0,76 62,110 62,84" fill="white"/>
+            </svg>
+            <span>BuyerForesight <em>eSign</em></span>
           </div>
-          <div class="signature-panel">
-            <h3>Your Signature</h3>
-            <div class="sig-tabs">
-              <button class="sig-tab active" data-sig="draw">Draw</button>
-              <button class="sig-tab" data-sig="type">Type</button>
-            </div>
-            <div id="sig-draw-panel" class="sig-panel">
-              <canvas id="signature-canvas" width="400" height="150"></canvas>
-              <button class="btn btn-sm" id="clear-canvas">Clear</button>
-            </div>
-            <div id="sig-type-panel" class="sig-panel hidden">
-              <input type="text" id="typed-signature" placeholder="Type your full name" class="sig-input">
-              <div id="typed-preview" class="typed-preview"></div>
-            </div>
-            <div class="sig-actions">
-              <button class="btn btn-primary btn-full" id="submit-signature">Sign Document</button>
-            </div>
+          <div id="signing-info"></div>
+          <div class="signing-topbar-actions">
+            <button class="btn btn-sm btn-danger" id="decline-btn">Decline</button>
+            <button class="btn btn-primary btn-sm" id="finish-signing-btn" disabled>Finish</button>
           </div>
         </div>
+        <div class="signing-progress">
+          <div class="signing-progress-fill" id="signing-progress-fill" style="width:0%"></div>
+        </div>
+        <div class="signing-body-wrapper">
+          <div id="signing-pdf-container" class="signing-pdf-pages"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Access Code View -->
+    <div id="access-code-view" class="view hidden">
+      <div class="auth-container">
+        <h2>Enter Access Code</h2>
+        <p class="subtitle" id="access-code-label"></p>
+        <form id="access-code-form" class="auth-form">
+          <input type="text" name="code" placeholder="Enter the code provided by the sender" required>
+          <button type="submit" class="btn btn-primary btn-full">Verify</button>
+          <div class="form-error" id="access-code-error"></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Signing Done View -->
+    <div id="signing-done-view" class="view hidden">
+      <div class="done-container">
+        <div class="done-icon">✓</div>
+        <h2 id="done-title">Document Signed!</h2>
+        <p id="done-message">Thank you. The document owner will be notified.</p>
       </div>
     </div>
 
@@ -135,18 +253,12 @@
     <div id="admin-view" class="view hidden">
       <div class="container">
         <h2>Admin Panel</h2>
-
-        <!-- Stats -->
         <div id="admin-stats" class="stats-grid"></div>
-
-        <!-- Admin Tabs -->
         <div class="admin-tabs">
           <button class="admin-tab active" data-admin-tab="users">Users</button>
           <button class="admin-tab" data-admin-tab="invitations">Invitations</button>
-          <button class="admin-tab" data-admin-tab="all-documents">All Documents</button>
+          <button class="admin-tab" data-admin-tab="all-envelopes">All Envelopes</button>
         </div>
-
-        <!-- Users Tab -->
         <div id="admin-users-tab" class="admin-tab-content">
           <div class="section-header">
             <h3>Users</h3>
@@ -154,8 +266,6 @@
           </div>
           <div id="admin-users-list"></div>
         </div>
-
-        <!-- Invitations Tab -->
         <div id="admin-invitations-tab" class="admin-tab-content hidden">
           <div class="section-header">
             <h3>Invitations</h3>
@@ -163,16 +273,14 @@
           </div>
           <div id="admin-invitations-list"></div>
         </div>
-
-        <!-- All Documents Tab -->
-        <div id="admin-all-documents-tab" class="admin-tab-content hidden">
-          <h3>All Documents</h3>
-          <div id="admin-documents-list" class="documents-grid"></div>
+        <div id="admin-all-envelopes-tab" class="admin-tab-content hidden">
+          <h3>All Envelopes</h3>
+          <div id="admin-envelopes-list" class="envelope-list"></div>
         </div>
       </div>
     </div>
 
-    <!-- Invite User Modal -->
+    <!-- Invite Modal -->
     <div id="invite-modal" class="modal hidden">
       <div class="modal-content">
         <div class="modal-header">
@@ -182,10 +290,7 @@
         <form id="invite-form">
           <input type="text" name="name" placeholder="Full Name" required>
           <input type="email" name="email" placeholder="Email" required>
-          <select name="role" class="select-input">
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </select>
+          <select name="role" class="select-input"><option value="user">User</option><option value="admin">Admin</option></select>
           <button type="submit" class="btn btn-primary btn-full">Send Invitation</button>
         </form>
         <div id="invite-result" class="hidden" style="margin-top:16px;"></div>
@@ -195,10 +300,7 @@
     <!-- Reset Password Modal -->
     <div id="reset-pw-modal" class="modal hidden">
       <div class="modal-content">
-        <div class="modal-header">
-          <h3>Reset Password</h3>
-          <button class="modal-close">&times;</button>
-        </div>
+        <div class="modal-header"><h3>Reset Password</h3><button class="modal-close">&times;</button></div>
         <form id="reset-pw-form">
           <input type="hidden" name="user_id" id="reset-pw-user-id">
           <p id="reset-pw-user-label" style="margin-bottom:12px;color:var(--gray-500);font-size:14px;"></p>
@@ -208,43 +310,55 @@
       </div>
     </div>
 
-    <!-- Upload Modal -->
-    <div id="upload-modal" class="modal hidden">
-      <div class="modal-content">
+    <!-- Signature Modal (for signing view) -->
+    <div id="signature-modal" class="modal hidden">
+      <div class="modal-content modal-lg">
         <div class="modal-header">
-          <h3>Upload Document</h3>
+          <h3 id="sig-modal-title">Add Signature</h3>
           <button class="modal-close">&times;</button>
         </div>
-        <form id="upload-form">
-          <input type="text" name="title" placeholder="Document title" required>
-          <div class="file-drop" id="file-drop">
-            <p>Drop a PDF here or click to select</p>
-            <input type="file" name="document" accept=".pdf" id="file-input">
-          </div>
-          <div id="file-name" class="file-name"></div>
-          <button type="submit" class="btn btn-primary btn-full" id="upload-submit" disabled>Upload</button>
-        </form>
+        <div class="sig-tabs">
+          <button class="sig-tab active" data-sig="draw">Draw</button>
+          <button class="sig-tab" data-sig="type">Type</button>
+        </div>
+        <div id="sig-draw-panel" class="sig-panel">
+          <canvas id="signature-canvas" width="500" height="160"></canvas>
+          <button class="btn btn-sm" id="clear-canvas">Clear</button>
+        </div>
+        <div id="sig-type-panel" class="sig-panel hidden">
+          <input type="text" id="typed-signature" placeholder="Type your full name" class="input-lg">
+          <div id="typed-preview" class="typed-preview"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="hideModal('signature-modal')">Cancel</button>
+          <button class="btn btn-primary" id="apply-signature-btn">Apply</button>
+        </div>
       </div>
     </div>
 
-    <!-- Send for Signature Modal -->
-    <div id="send-modal" class="modal hidden">
+    <!-- Decline Modal -->
+    <div id="decline-modal" class="modal hidden">
       <div class="modal-content">
-        <div class="modal-header">
-          <h3>Send for Signature</h3>
-          <button class="modal-close">&times;</button>
+        <div class="modal-header"><h3>Decline to Sign</h3><button class="modal-close">&times;</button></div>
+        <p style="margin-bottom:12px;color:var(--gray-500);font-size:14px;">Please provide a reason for declining:</p>
+        <textarea id="decline-reason" rows="3" placeholder="Reason for declining..." class="input-lg"></textarea>
+        <div class="modal-footer">
+          <button class="btn" onclick="hideModal('decline-modal')">Cancel</button>
+          <button class="btn btn-danger" id="confirm-decline-btn">Decline</button>
         </div>
-        <form id="send-form">
-          <div id="signers-list">
-            <div class="signer-row">
-              <input type="text" placeholder="Name" class="signer-name" required>
-              <input type="email" placeholder="Email" class="signer-email" required>
-              <button type="button" class="btn btn-sm remove-signer" title="Remove">&times;</button>
-            </div>
-          </div>
-          <button type="button" class="btn btn-sm" id="add-signer">+ Add Signer</button>
-          <button type="submit" class="btn btn-primary btn-full" style="margin-top: 16px;">Send</button>
-        </form>
+      </div>
+    </div>
+
+    <!-- Void Modal -->
+    <div id="void-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header"><h3>Void Envelope</h3><button class="modal-close">&times;</button></div>
+        <p style="margin-bottom:12px;color:var(--gray-500);font-size:14px;">This will cancel the signing process for all recipients.</p>
+        <textarea id="void-reason" rows="2" placeholder="Reason for voiding..." class="input-lg"></textarea>
+        <div class="modal-footer">
+          <button class="btn" onclick="hideModal('void-modal')">Cancel</button>
+          <button class="btn btn-danger" id="confirm-void-btn">Void Envelope</button>
+        </div>
       </div>
     </div>
   </div>

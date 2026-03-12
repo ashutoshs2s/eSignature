@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/users', requireAdmin, (req, res) => {
   const users = db.prepare(`
     SELECT id, email, name, role, is_active, created_at,
-      (SELECT COUNT(*) FROM documents WHERE owner_id = users.id) as document_count
+      (SELECT COUNT(*) FROM envelopes WHERE owner_id = users.id) as envelope_count
     FROM users ORDER BY created_at DESC
   `).all();
   res.json(users);
@@ -96,25 +96,25 @@ router.delete('/invitations/:id', requireAdmin, (req, res) => {
 router.get('/stats', requireAdmin, (req, res) => {
   const users = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
   const activeUsers = db.prepare('SELECT COUNT(*) as count FROM users WHERE is_active = 1').get().count;
-  const documents = db.prepare('SELECT COUNT(*) as count FROM documents').get().count;
-  const pendingSignatures = db.prepare("SELECT COUNT(*) as count FROM signature_requests WHERE status = 'pending'").get().count;
-  const completedDocuments = db.prepare("SELECT COUNT(*) as count FROM documents WHERE status = 'completed'").get().count;
+  const envelopes = db.prepare('SELECT COUNT(*) as count FROM envelopes').get().count;
+  const sentEnvelopes = db.prepare("SELECT COUNT(*) as count FROM envelopes WHERE status = 'sent'").get().count;
+  const completedEnvelopes = db.prepare("SELECT COUNT(*) as count FROM envelopes WHERE status = 'completed'").get().count;
   const pendingInvitations = db.prepare("SELECT COUNT(*) as count FROM invitations WHERE accepted = 0 AND expires_at > datetime('now')").get().count;
 
-  res.json({ users, activeUsers, documents, pendingSignatures, completedDocuments, pendingInvitations });
+  res.json({ users, activeUsers, envelopes, sentEnvelopes, completedEnvelopes, pendingInvitations });
 });
 
-// All documents (admin view)
-router.get('/documents', requireAdmin, (req, res) => {
-  const documents = db.prepare(`
-    SELECT d.*, u.name as owner_name, u.email as owner_email,
-      (SELECT COUNT(*) FROM signature_requests sr WHERE sr.document_id = d.id) as total_signers,
-      (SELECT COUNT(*) FROM signature_requests sr WHERE sr.document_id = d.id AND sr.status = 'signed') as signed_count
-    FROM documents d
-    JOIN users u ON d.owner_id = u.id
-    ORDER BY d.created_at DESC
+// All envelopes (admin view)
+router.get('/envelopes', requireAdmin, (req, res) => {
+  const envelopes = db.prepare(`
+    SELECT e.*, u.name as owner_name, u.email as owner_email,
+      (SELECT COUNT(*) FROM recipients r WHERE r.envelope_id = e.id AND r.role = 'signer') as total_signers,
+      (SELECT COUNT(*) FROM recipients r WHERE r.envelope_id = e.id AND r.role = 'signer' AND r.status = 'signed') as signed_count
+    FROM envelopes e
+    JOIN users u ON e.owner_id = u.id
+    ORDER BY e.created_at DESC
   `).all();
-  res.json(documents);
+  res.json(envelopes);
 });
 
 // Reset user password (admin)

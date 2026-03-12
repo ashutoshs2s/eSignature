@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 
 const authRoutes = require('./routes/auth');
-const documentRoutes = require('./routes/documents');
+const envelopeRoutes = require('./routes/envelopes');
 const signRoutes = require('./routes/sign');
 const adminRoutes = require('./routes/admin');
 
@@ -42,7 +42,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/documents', documentRoutes);
+app.use('/api/envelopes', envelopeRoutes);
 app.use('/api/sign', signRoutes);
 app.use('/api/admin', adminRoutes);
 

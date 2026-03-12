@@ -36,50 +36,138 @@ db.exec(`
     FOREIGN KEY (invited_by) REFERENCES users(id)
   );
 
-  CREATE TABLE IF NOT EXISTS documents (
+  CREATE TABLE IF NOT EXISTS envelopes (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
-    filename TEXT NOT NULL,
-    original_path TEXT NOT NULL,
-    signed_path TEXT,
-    owner_id INTEGER NOT NULL,
+    message TEXT DEFAULT '',
     status TEXT NOT NULL DEFAULT 'draft',
+    owner_id INTEGER NOT NULL,
+    expires_at TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    completed_at TEXT,
+    voided_at TEXT,
+    void_reason TEXT,
+    FOREIGN KEY (owner_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS envelope_documents (
+    id TEXT PRIMARY KEY,
+    envelope_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    page_count INTEGER NOT NULL DEFAULT 1,
+    order_num INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (envelope_id) REFERENCES envelopes(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS recipients (
+    id TEXT PRIMARY KEY,
+    envelope_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'signer',
+    order_num INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'pending',
+    token TEXT UNIQUE NOT NULL,
+    access_code TEXT,
+    decline_reason TEXT,
+    signed_at TEXT,
+    viewed_at TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (envelope_id) REFERENCES envelopes(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS fields (
+    id TEXT PRIMARY KEY,
+    envelope_id TEXT NOT NULL,
+    document_id TEXT NOT NULL,
+    recipient_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    page_number INTEGER NOT NULL DEFAULT 1,
+    x REAL NOT NULL,
+    y REAL NOT NULL,
+    width REAL NOT NULL,
+    height REAL NOT NULL,
+    required INTEGER NOT NULL DEFAULT 1,
+    label TEXT DEFAULT '',
+    value TEXT DEFAULT '',
+    FOREIGN KEY (envelope_id) REFERENCES envelopes(id) ON DELETE CASCADE,
+    FOREIGN KEY (document_id) REFERENCES envelope_documents(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipient_id) REFERENCES recipients(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS signatures (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    recipient_id TEXT NOT NULL,
+    field_id TEXT NOT NULL,
+    signature_data TEXT NOT NULL,
+    signature_type TEXT NOT NULL DEFAULT 'draw',
+    ip_address TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (recipient_id) REFERENCES recipients(id),
+    FOREIGN KEY (field_id) REFERENCES fields(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    owner_id INTEGER NOT NULL,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (owner_id) REFERENCES users(id)
   );
 
-  CREATE TABLE IF NOT EXISTS signature_requests (
+  CREATE TABLE IF NOT EXISTS template_documents (
     id TEXT PRIMARY KEY,
-    document_id TEXT NOT NULL,
-    signer_email TEXT NOT NULL,
-    signer_name TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
-    token TEXT UNIQUE NOT NULL,
-    signed_at TEXT,
-    created_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (document_id) REFERENCES documents(id)
+    template_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    page_count INTEGER NOT NULL DEFAULT 1,
+    order_num INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
   );
 
-  CREATE TABLE IF NOT EXISTS signatures (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    request_id TEXT NOT NULL,
-    signature_data TEXT NOT NULL,
-    signature_type TEXT NOT NULL DEFAULT 'draw',
-    ip_address TEXT,
-    created_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (request_id) REFERENCES signature_requests(id)
+  CREATE TABLE IF NOT EXISTS template_roles (
+    id TEXT PRIMARY KEY,
+    template_id TEXT NOT NULL,
+    name TEXT NOT NULL DEFAULT 'Signer',
+    order_num INTEGER NOT NULL DEFAULT 1,
+    color TEXT NOT NULL DEFAULT '#5B21B6',
+    FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS template_fields (
+    id TEXT PRIMARY KEY,
+    template_id TEXT NOT NULL,
+    document_id TEXT NOT NULL,
+    role_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    page_number INTEGER NOT NULL DEFAULT 1,
+    x REAL NOT NULL,
+    y REAL NOT NULL,
+    width REAL NOT NULL,
+    height REAL NOT NULL,
+    required INTEGER NOT NULL DEFAULT 1,
+    label TEXT DEFAULT '',
+    FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE,
+    FOREIGN KEY (document_id) REFERENCES template_documents(id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES template_roles(id) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS audit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    document_id TEXT NOT NULL,
+    envelope_id TEXT NOT NULL,
     action TEXT NOT NULL,
     actor TEXT NOT NULL,
     details TEXT,
     ip_address TEXT,
     created_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (document_id) REFERENCES documents(id)
+    FOREIGN KEY (envelope_id) REFERENCES envelopes(id)
   );
 `);
 
