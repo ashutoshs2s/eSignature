@@ -111,10 +111,22 @@
         <div class="wizard-header">
           <button class="btn btn-sm" id="wizard-cancel">&larr; Cancel</button>
           <div class="wizard-steps">
-            <div class="wizard-step active" data-step="1"><span class="step-num">1</span> Upload</div>
-            <div class="wizard-step" data-step="2"><span class="step-num">2</span> Recipients</div>
-            <div class="wizard-step" data-step="3"><span class="step-num">3</span> Place Fields</div>
-            <div class="wizard-step" data-step="4"><span class="step-num">4</span> Review & Send</div>
+            <div class="wizard-step active" data-step="1">
+              <div class="step-circle">1</div>
+              <div class="step-label">Upload</div>
+            </div>
+            <div class="wizard-step" data-step="2">
+              <div class="step-circle">2</div>
+              <div class="step-label">Recipients</div>
+            </div>
+            <div class="wizard-step" data-step="3">
+              <div class="step-circle">3</div>
+              <div class="step-label">Place Fields</div>
+            </div>
+            <div class="wizard-step" data-step="4">
+              <div class="step-circle">4</div>
+              <div class="step-label">Review & Send</div>
+            </div>
           </div>
           <div style="width:80px;"></div>
         </div>
@@ -126,7 +138,13 @@
             <input type="text" id="envelope-title" placeholder="Envelope title (e.g., NDA Agreement)" class="input-lg">
             <textarea id="envelope-message" placeholder="Optional message to signers..." rows="2" class="input-lg"></textarea>
             <div class="file-drop" id="wizard-file-drop">
-              <p>Drop PDFs here or click to upload</p>
+              <div class="drop-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                </svg>
+              </div>
+              <p><strong>Drop PDF files here</strong> or click to browse</p>
+              <p class="drop-hint">Supports PDF documents up to 10MB</p>
               <input type="file" id="wizard-file-input" accept=".pdf" multiple>
             </div>
             <div id="wizard-doc-list" class="doc-list"></div>
@@ -141,16 +159,20 @@
         <div class="wizard-panel hidden" id="wizard-step-2">
           <div class="wizard-form">
             <h3>Add Recipients</h3>
-            <p class="help-text">Recipients sign in order. Drag to reorder.</p>
+            <p class="help-text">Recipients will sign in order. Add at least one signer.</p>
             <div id="recipients-list" class="recipients-list"></div>
-            <div class="add-recipient-row">
-              <input type="text" id="new-recipient-name" placeholder="Full name">
-              <input type="email" id="new-recipient-email" placeholder="Email">
-              <select id="new-recipient-role" class="select-sm">
-                <option value="signer">Needs to Sign</option>
-                <option value="cc">Receives a Copy</option>
-              </select>
-              <button class="btn btn-primary btn-sm" id="add-recipient-btn">Add</button>
+            <div class="add-recipient-form">
+              <div class="add-recipient-row">
+                <input type="text" id="new-recipient-name" placeholder="Full name">
+                <input type="email" id="new-recipient-email" placeholder="Email address">
+              </div>
+              <div class="add-recipient-row">
+                <select id="new-recipient-role" class="select-input">
+                  <option value="signer">Needs to Sign</option>
+                  <option value="cc">Receives a Copy</option>
+                </select>
+                <button class="btn btn-primary btn-sm" id="add-recipient-btn">+ Add Recipient</button>
+              </div>
             </div>
             <div class="wizard-actions">
               <button class="btn" id="wizard-prev-2">Back</button>
@@ -163,17 +185,50 @@
         <div class="wizard-panel hidden" id="wizard-step-3">
           <div class="field-editor">
             <div class="field-sidebar">
-              <h4>Recipients</h4>
-              <div id="field-recipient-selector"></div>
-              <h4 style="margin-top:16px;">Fields</h4>
-              <div class="field-types">
-                <button class="field-type-btn" data-type="signature" draggable="true">✍ Signature</button>
-                <button class="field-type-btn" data-type="initials" draggable="true">AI Initials</button>
-                <button class="field-type-btn" data-type="date_signed" draggable="true">📅 Date Signed</button>
-                <button class="field-type-btn" data-type="text" draggable="true">T Text</button>
-                <button class="field-type-btn" data-type="name" draggable="true">👤 Name</button>
-                <button class="field-type-btn" data-type="email" draggable="true">@ Email</button>
-                <button class="field-type-btn" data-type="checkbox" draggable="true">☐ Checkbox</button>
+              <div class="field-sidebar-section">
+                <h4>Recipients</h4>
+                <div id="field-recipient-selector" class="field-recipient-selector"></div>
+              </div>
+              <div class="field-sidebar-section">
+                <h4>Drag Fields onto Document</h4>
+                <div class="field-types">
+                  <button class="field-type-btn" data-type="signature" draggable="true">
+                    <span class="ft-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    </span>
+                    Signature
+                  </button>
+                  <button class="field-type-btn" data-type="initials" draggable="true">
+                    <span class="ft-icon">AI</span>
+                    Initials
+                  </button>
+                  <button class="field-type-btn" data-type="date_signed" draggable="true">
+                    <span class="ft-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    </span>
+                    Date
+                  </button>
+                  <button class="field-type-btn" data-type="text" draggable="true">
+                    <span class="ft-icon">T</span>
+                    Text
+                  </button>
+                  <button class="field-type-btn" data-type="name" draggable="true">
+                    <span class="ft-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </span>
+                    Name
+                  </button>
+                  <button class="field-type-btn" data-type="email" draggable="true">
+                    <span class="ft-icon">@</span>
+                    Email
+                  </button>
+                  <button class="field-type-btn" data-type="checkbox" draggable="true">
+                    <span class="ft-icon">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
+                    </span>
+                    Checkbox
+                  </button>
+                </div>
               </div>
               <div class="field-sidebar-actions">
                 <button class="btn" id="wizard-prev-3">Back</button>
@@ -193,7 +248,10 @@
             <div id="review-summary" class="review-summary"></div>
             <div class="wizard-actions">
               <button class="btn" id="wizard-prev-4">Back</button>
-              <button class="btn btn-primary btn-lg" id="wizard-send">Send Envelope</button>
+              <button class="btn btn-primary btn-lg" id="wizard-send">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+                Send Envelope
+              </button>
             </div>
           </div>
         </div>
@@ -212,10 +270,10 @@
             </svg>
             <span>BuyerForesight <em>eSign</em></span>
           </div>
-          <div id="signing-info"></div>
+          <div id="signing-info" class="signing-info"></div>
           <div class="signing-topbar-actions">
-            <button class="btn btn-sm btn-danger" id="decline-btn">Decline</button>
-            <button class="btn btn-primary btn-sm" id="finish-signing-btn" disabled>Finish</button>
+            <button class="btn btn-sm btn-outline-danger" id="decline-btn">Decline</button>
+            <button class="btn btn-primary btn-sm" id="finish-signing-btn" disabled>Finish Signing</button>
           </div>
         </div>
         <div class="signing-progress">
@@ -243,7 +301,7 @@
     <!-- Signing Done View -->
     <div id="signing-done-view" class="view hidden">
       <div class="done-container">
-        <div class="done-icon">✓</div>
+        <div class="done-icon">&#10003;</div>
         <h2 id="done-title">Document Signed!</h2>
         <p id="done-message">Thank you. The document owner will be notified.</p>
       </div>
@@ -262,14 +320,14 @@
         <div id="admin-users-tab" class="admin-tab-content">
           <div class="section-header">
             <h3>Users</h3>
-            <button class="btn btn-primary" id="invite-user-btn">Invite User</button>
+            <button class="btn btn-primary btn-sm" id="invite-user-btn">Invite User</button>
           </div>
           <div id="admin-users-list"></div>
         </div>
         <div id="admin-invitations-tab" class="admin-tab-content hidden">
           <div class="section-header">
             <h3>Invitations</h3>
-            <button class="btn btn-primary" id="invite-user-btn-2">Invite User</button>
+            <button class="btn btn-primary btn-sm" id="invite-user-btn-2">Invite User</button>
           </div>
           <div id="admin-invitations-list"></div>
         </div>
@@ -282,6 +340,7 @@
 
     <!-- Invite Modal -->
     <div id="invite-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
       <div class="modal-content">
         <div class="modal-header">
           <h3>Invite User</h3>
@@ -291,7 +350,7 @@
           <input type="text" name="name" placeholder="Full Name" required>
           <input type="email" name="email" placeholder="Email" required>
           <select name="role" class="select-input"><option value="user">User</option><option value="admin">Admin</option></select>
-          <button type="submit" class="btn btn-primary btn-full">Send Invitation</button>
+          <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px;">Send Invitation</button>
         </form>
         <div id="invite-result" class="hidden" style="margin-top:16px;"></div>
       </div>
@@ -299,6 +358,7 @@
 
     <!-- Reset Password Modal -->
     <div id="reset-pw-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
       <div class="modal-content">
         <div class="modal-header"><h3>Reset Password</h3><button class="modal-close">&times;</button></div>
         <form id="reset-pw-form">
@@ -310,8 +370,9 @@
       </div>
     </div>
 
-    <!-- Signature Modal (for signing view) -->
+    <!-- Signature Modal -->
     <div id="signature-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
       <div class="modal-content modal-lg">
         <div class="modal-header">
           <h3 id="sig-modal-title">Add Signature</h3>
@@ -331,26 +392,28 @@
         </div>
         <div class="modal-footer">
           <button class="btn" onclick="hideModal('signature-modal')">Cancel</button>
-          <button class="btn btn-primary" id="apply-signature-btn">Apply</button>
+          <button class="btn btn-primary" id="apply-signature-btn">Apply Signature</button>
         </div>
       </div>
     </div>
 
     <!-- Decline Modal -->
     <div id="decline-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
       <div class="modal-content">
         <div class="modal-header"><h3>Decline to Sign</h3><button class="modal-close">&times;</button></div>
         <p style="margin-bottom:12px;color:var(--gray-500);font-size:14px;">Please provide a reason for declining:</p>
         <textarea id="decline-reason" rows="3" placeholder="Reason for declining..." class="input-lg"></textarea>
         <div class="modal-footer">
           <button class="btn" onclick="hideModal('decline-modal')">Cancel</button>
-          <button class="btn btn-danger" id="confirm-decline-btn">Decline</button>
+          <button class="btn btn-danger" id="confirm-decline-btn">Decline to Sign</button>
         </div>
       </div>
     </div>
 
     <!-- Void Modal -->
     <div id="void-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
       <div class="modal-content">
         <div class="modal-header"><h3>Void Envelope</h3><button class="modal-close">&times;</button></div>
         <p style="margin-bottom:12px;color:var(--gray-500);font-size:14px;">This will cancel the signing process for all recipients.</p>

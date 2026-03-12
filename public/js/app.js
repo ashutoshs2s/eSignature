@@ -28,10 +28,10 @@ const signing = {
 };
 
 const RECIPIENT_COLORS = ['#5B21B6','#0891B2','#059669','#D97706','#DC2626','#7C3AED','#2563EB','#10B981','#F59E0B','#EF4444'];
-const FIELD_LABELS = { signature:'Signature', initials:'Initials', date_signed:'Date', text:'Text', name:'Name', email:'Email', checkbox:'Check' };
+const FIELD_LABELS = { signature:'Signature', initials:'Initials', date_signed:'Date', text:'Text', name:'Name', email:'Email', checkbox:'Checkbox' };
 const FIELD_DEFAULTS = {
-  signature: { w: 20, h: 4 }, initials: { w: 8, h: 4 }, date_signed: { w: 14, h: 3 },
-  text: { w: 18, h: 3 }, name: { w: 18, h: 3 }, email: { w: 18, h: 3 }, checkbox: { w: 2.5, h: 2.5 }
+  signature: { w: 20, h: 5 }, initials: { w: 10, h: 5 }, date_signed: { w: 16, h: 3.5 },
+  text: { w: 20, h: 3.5 }, name: { w: 20, h: 3.5 }, email: { w: 20, h: 3.5 }, checkbox: { w: 3, h: 3 }
 };
 
 // ==================== Helpers ====================
@@ -41,17 +41,35 @@ async function api(url, opts = {}) {
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
 }
+
 function toast(msg, type = 'info') {
-  const el = document.createElement('div'); el.className = `toast ${type}`; el.textContent = msg;
-  document.body.appendChild(el); setTimeout(() => el.remove(), 3500);
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.classList.add('fade-out'); setTimeout(() => el.remove(), 300); }, 3000);
 }
+
 function fmtDate(d) {
-  if (!d) return ''; return new Date(d + 'Z').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  if (!d) return '';
+  return new Date(d + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
-function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-function showView(id) { document.querySelectorAll('.view').forEach(v => v.classList.add('hidden')); document.getElementById(id)?.classList.remove('hidden'); }
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  document.getElementById(id)?.classList.remove('hidden');
+}
+
 function showModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
 function hideModal(id) { document.getElementById(id)?.classList.add('hidden'); }
+
 function navigate(view) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.nav-btn[data-view="${view}"]`)?.classList.add('active');
@@ -62,17 +80,27 @@ function navigate(view) {
 
 // ==================== Auth ====================
 async function checkAuth() {
-  try { currentUser = await api('/api/auth/me'); showApp(); } catch { await checkSetup(); showView('auth-view'); }
+  try {
+    currentUser = await api('/api/auth/me');
+    showApp();
+  } catch {
+    await checkSetup();
+    showView('auth-view');
+  }
 }
+
 async function checkSetup() {
   try {
     const { needs_setup } = await api('/api/auth/setup-status');
     if (needs_setup) {
       document.querySelector('[data-tab="register"]').textContent = 'Setup';
       document.querySelector('#register-form button[type="submit"]').textContent = 'Create Admin Account';
-    } else if (!inviteToken) { document.getElementById('invite-notice')?.classList.remove('hidden'); }
+    } else if (!inviteToken) {
+      document.getElementById('invite-notice')?.classList.remove('hidden');
+    }
   } catch {}
 }
+
 function showApp() {
   document.getElementById('header').classList.remove('hidden');
   document.getElementById('user-name').textContent = currentUser.name;
@@ -82,33 +110,49 @@ function showApp() {
 
 // Auth tabs
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
-  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active')); t.classList.add('active');
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
   document.getElementById('login-form').classList.toggle('hidden', t.dataset.tab !== 'login');
   document.getElementById('register-form').classList.toggle('hidden', t.dataset.tab !== 'register');
 }));
 
 // Login
 document.getElementById('login-form').addEventListener('submit', async e => {
-  e.preventDefault(); const f = e.target; document.getElementById('login-error').textContent = '';
-  try { currentUser = await api('/api/auth/login', { method:'POST', body: JSON.stringify({ email:f.email.value, password:f.password.value }) }); showApp(); }
-  catch (err) { document.getElementById('login-error').textContent = err.message; }
+  e.preventDefault();
+  const f = e.target;
+  document.getElementById('login-error').textContent = '';
+  try {
+    currentUser = await api('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: f.email.value, password: f.password.value })
+    });
+    showApp();
+  } catch (err) {
+    document.getElementById('login-error').textContent = err.message;
+  }
 });
 
 // Register
 document.getElementById('register-form').addEventListener('submit', async e => {
-  e.preventDefault(); const f = e.target; document.getElementById('register-error').textContent = '';
+  e.preventDefault();
+  const f = e.target;
+  document.getElementById('register-error').textContent = '';
   try {
-    const body = { name:f.name.value, email:f.email.value, password:f.password.value };
+    const body = { name: f.name.value, email: f.email.value, password: f.password.value };
     if (inviteToken) body.invite_token = inviteToken;
-    currentUser = await api('/api/auth/register', { method:'POST', body: JSON.stringify(body) });
+    currentUser = await api('/api/auth/register', { method: 'POST', body: JSON.stringify(body) });
     if (inviteToken) { history.replaceState({}, '', '/'); inviteToken = null; }
     showApp();
-  } catch (err) { document.getElementById('register-error').textContent = err.message; }
+  } catch (err) {
+    document.getElementById('register-error').textContent = err.message;
+  }
 });
 
 document.getElementById('logout-btn').addEventListener('click', async () => {
-  await api('/api/auth/logout', { method:'POST' }); currentUser = null;
-  document.getElementById('header').classList.add('hidden'); showView('auth-view');
+  await api('/api/auth/logout', { method: 'POST' });
+  currentUser = null;
+  document.getElementById('header').classList.add('hidden');
+  showView('auth-view');
 });
 
 // Nav
@@ -121,21 +165,25 @@ async function loadEnvelopes(filter = 'all') {
     const url = filter === 'all' ? '/api/envelopes' : `/api/envelopes?status=${filter}`;
     const envs = await api(url);
     const el = document.getElementById('envelopes-list');
-    if (envs.length === 0) { el.innerHTML = '<div class="empty-state">No envelopes found.</div>'; return; }
+    if (envs.length === 0) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div><p>No envelopes found</p></div>';
+      return;
+    }
     el.innerHTML = envs.map(e => `
       <div class="envelope-row" onclick="viewEnvelope('${e.id}')">
-        <div class="env-title">${esc(e.title)}</div>
-        <div class="env-meta">${e.document_count} doc${e.document_count !== 1 ? 's' : ''}</div>
-        <div class="env-recipients">${e.signed_count}/${e.total_signers} signed</div>
+        <div class="envelope-title">${esc(e.title)}</div>
+        <div class="envelope-meta">${e.document_count || 0} doc${e.document_count !== 1 ? 's' : ''}</div>
+        <div class="envelope-recipients">${e.signed_count || 0}/${e.total_signers || 0} signed</div>
         <div><span class="status-badge status-${e.status}">${e.status}</span></div>
-        <div class="env-date">${fmtDate(e.updated_at)}</div>
+        <div class="envelope-date">${fmtDate(e.updated_at)}</div>
       </div>
     `).join('');
   } catch (err) { toast(err.message, 'error'); }
 }
 
 document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active')); b.classList.add('active');
+  document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
   loadEnvelopes(b.dataset.filter);
 }));
 
@@ -144,14 +192,17 @@ async function loadInbox() {
   try {
     const items = await api('/api/envelopes/inbox');
     const el = document.getElementById('inbox-list');
-    if (items.length === 0) { el.innerHTML = '<div class="empty-state">No documents waiting for your action.</div>'; return; }
+    if (items.length === 0) {
+      el.innerHTML = '<div class="empty-state"><p>No documents waiting for your action.</p></div>';
+      return;
+    }
     el.innerHTML = items.map(i => `
       <div class="envelope-row ${i.my_status === 'sent' || i.my_status === 'delivered' ? 'clickable' : ''}"
            onclick="${i.my_status === 'sent' || i.my_status === 'delivered' ? `openSigning('${i.token}')` : ''}">
-        <div class="env-title">${esc(i.title)}</div>
-        <div class="env-meta">From: ${esc(i.sender_name)}</div>
+        <div class="envelope-title">${esc(i.title)}</div>
+        <div class="envelope-meta">From: ${esc(i.sender_name)}</div>
         <div><span class="status-badge status-${i.my_status}">${i.my_status}</span></div>
-        <div class="env-date">${fmtDate(i.created_at)}</div>
+        <div class="envelope-date">${fmtDate(i.created_at)}</div>
       </div>
     `).join('');
   } catch (err) { toast(err.message, 'error'); }
@@ -169,55 +220,62 @@ async function viewEnvelope(id) {
         <div>
           <h2>${esc(env.title)}</h2>
           <span class="status-badge status-${env.status}">${env.status}</span>
-          ${env.message ? `<p class="env-message">${esc(env.message)}</p>` : ''}
+          ${env.message ? `<p class="detail-message">${esc(env.message)}</p>` : ''}
         </div>
         <div class="detail-actions">
-          ${env.status === 'sent' ? `<button class="btn btn-danger btn-sm" onclick="openVoidModal('${env.id}')">Void</button>` : ''}
+          ${env.status === 'sent' ? `<button class="btn btn-outline-danger btn-sm" onclick="openVoidModal('${env.id}')">Void</button>` : ''}
           ${env.status === 'completed' ? `
             <button class="btn btn-sm" onclick="downloadEnvelope('${env.id}')">Download Signed</button>
             <button class="btn btn-sm" onclick="downloadCertificate('${env.id}')">Certificate</button>
           ` : ''}
           ${env.status === 'draft' ? `<button class="btn btn-primary btn-sm" onclick="resumeWizard('${env.id}')">Edit & Send</button>` : ''}
-          <button class="btn btn-sm btn-danger" onclick="deleteEnvelope('${env.id}')">Delete</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteEnvelope('${env.id}')">Delete</button>
         </div>
       </div>
       <div class="detail-grid">
         <div class="detail-section">
           <h3>Recipients</h3>
+          <div class="recipient-list-detail">
           ${env.recipients.map((r, i) => `
-            <div class="recipient-row">
-              <span class="color-dot" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
-              <div class="recipient-info">
-                <div>${esc(r.name)} <small>(${esc(r.email)})</small></div>
-                <div class="recipient-meta">
-                  <span class="status-badge status-${r.status}">${r.status}</span>
-                  ${r.role === 'cc' ? '<span class="badge-cc">CC</span>' : ''}
-                  ${r.signed_at ? `<span class="meta-sm">Signed ${fmtDate(r.signed_at)}</span>` : ''}
-                  ${r.decline_reason ? `<span class="meta-sm text-danger">Reason: ${esc(r.decline_reason)}</span>` : ''}
+            <div class="signer-item">
+              <div class="signer-info">
+                <span class="signer-color-dot" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
+                <div>
+                  <div>${esc(r.name)} <small style="color:var(--gray-500)">${esc(r.email)}</small></div>
+                  <div style="margin-top:4px;">
+                    <span class="status-badge status-${r.status}">${r.status}</span>
+                    ${r.role === 'cc' ? '<span class="status-badge" style="background:#f0fdf4;color:#059669">CC</span>' : ''}
+                    ${r.signed_at ? `<span style="font-size:12px;color:var(--gray-500);margin-left:8px;">Signed ${fmtDate(r.signed_at)}</span>` : ''}
+                    ${r.decline_reason ? `<span style="font-size:12px;color:var(--danger);margin-left:8px;">Reason: ${esc(r.decline_reason)}</span>` : ''}
+                  </div>
                 </div>
               </div>
               ${env.status === 'sent' && (r.status === 'sent' || r.status === 'delivered') ? `
-                <div class="recipient-actions">
+                <div style="display:flex;gap:6px;">
                   <button class="btn btn-sm" onclick="copyToClipboard('${location.origin}/sign/${r.token}')">Copy Link</button>
                   <button class="btn btn-sm" onclick="resendReminder('${env.id}','${r.id}')">Resend</button>
                 </div>
               ` : ''}
             </div>
           `).join('')}
+          </div>
         </div>
         <div class="detail-section">
           <h3>Documents</h3>
           ${env.documents.map(d => `
-            <div class="doc-item">${esc(d.title)} <small>(${d.page_count} page${d.page_count !== 1 ? 's' : ''})</small></div>
+            <div class="doc-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+              ${esc(d.title)} <small style="color:var(--gray-500)">(${d.page_count} page${d.page_count !== 1 ? 's' : ''})</small>
+            </div>
           `).join('')}
         </div>
         <div class="detail-section detail-full">
-          <h3>Activity</h3>
-          ${env.auditLog.length === 0 ? '<p class="meta-sm">No activity yet.</p>' : env.auditLog.map(a => `
+          <h3>Activity Log</h3>
+          ${env.auditLog.length === 0 ? '<p style="color:var(--gray-500);font-size:14px;">No activity yet.</p>' : env.auditLog.map(a => `
             <div class="audit-item">
               <span class="audit-action">${esc(a.action.replace(/_/g, ' '))}</span>
               <span class="audit-actor">${esc(a.actor)}</span>
-              ${a.details ? `<span class="audit-details">${esc(a.details)}</span>` : ''}
+              ${a.details ? ` - <span class="audit-details">${esc(a.details)}</span>` : ''}
               <span class="audit-time">${fmtDate(a.created_at)}</span>
             </div>
           `).join('')}
@@ -231,33 +289,57 @@ document.getElementById('back-to-dashboard').addEventListener('click', () => nav
 
 async function deleteEnvelope(id) {
   if (!confirm('Delete this envelope?')) return;
-  try { await api(`/api/envelopes/${id}`, { method:'DELETE' }); toast('Deleted', 'success'); navigate('dashboard'); }
-  catch (err) { toast(err.message, 'error'); }
+  try {
+    await api(`/api/envelopes/${id}`, { method: 'DELETE' });
+    toast('Deleted', 'success');
+    navigate('dashboard');
+  } catch (err) { toast(err.message, 'error'); }
 }
+
 function downloadEnvelope(id) { window.open(`/api/envelopes/${id}/download`, '_blank'); }
 function downloadCertificate(id) { window.open(`/api/envelopes/${id}/certificate`, '_blank'); }
-function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => toast('Copied!', 'success')); }
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard!', 'success'));
+}
+
 async function resendReminder(envId, rid) {
-  try { await api(`/api/envelopes/${envId}/resend/${rid}`, { method:'POST' }); toast('Reminder sent', 'success'); }
-  catch (err) { toast(err.message, 'error'); }
+  try {
+    await api(`/api/envelopes/${envId}/resend/${rid}`, { method: 'POST' });
+    toast('Reminder sent', 'success');
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 // Void
-function openVoidModal(id) { currentEnvelopeId = id; document.getElementById('void-reason').value = ''; showModal('void-modal'); }
+function openVoidModal(id) {
+  currentEnvelopeId = id;
+  document.getElementById('void-reason').value = '';
+  showModal('void-modal');
+}
+
 document.getElementById('confirm-void-btn').addEventListener('click', async () => {
   try {
-    await api(`/api/envelopes/${currentEnvelopeId}/void`, { method:'POST', body: JSON.stringify({ reason: document.getElementById('void-reason').value }) });
-    hideModal('void-modal'); toast('Envelope voided', 'success'); viewEnvelope(currentEnvelopeId);
+    await api(`/api/envelopes/${currentEnvelopeId}/void`, {
+      method: 'POST',
+      body: JSON.stringify({ reason: document.getElementById('void-reason').value })
+    });
+    hideModal('void-modal');
+    toast('Envelope voided', 'success');
+    viewEnvelope(currentEnvelopeId);
   } catch (err) { toast(err.message, 'error'); }
 });
 
 // ==================== Wizard ====================
 async function startWizard() {
   try {
-    const env = await api('/api/envelopes', { method:'POST', body: JSON.stringify({ title: 'Untitled Envelope' }) });
+    const env = await api('/api/envelopes', { method: 'POST', body: JSON.stringify({ title: 'Untitled Envelope' }) });
     wizard.envelopeId = env.id;
-    wizard.step = 1; wizard.documents = []; wizard.recipients = []; wizard.fields = [];
-    wizard.selectedRecipient = null; wizard.selectedFieldType = null;
+    wizard.step = 1;
+    wizard.documents = [];
+    wizard.recipients = [];
+    wizard.fields = [];
+    wizard.selectedRecipient = null;
+    wizard.selectedFieldType = null;
     document.getElementById('envelope-title').value = '';
     document.getElementById('envelope-message').value = '';
     document.getElementById('wizard-doc-list').innerHTML = '';
@@ -274,7 +356,8 @@ async function resumeWizard(id) {
     wizard.documents = env.documents;
     wizard.recipients = env.recipients;
     wizard.fields = env.fields;
-    wizard.step = 1; wizard.selectedRecipient = null;
+    wizard.step = 1;
+    wizard.selectedRecipient = null;
     document.getElementById('envelope-title').value = env.title;
     document.getElementById('envelope-message').value = env.message || '';
     renderWizardDocs();
@@ -290,6 +373,13 @@ function setWizardStep(step) {
     const n = parseInt(s.dataset.step);
     s.classList.toggle('active', n === step);
     s.classList.toggle('completed', n < step);
+    // Update circle content for completed steps
+    const circle = s.querySelector('.step-circle');
+    if (n < step) {
+      circle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>';
+    } else {
+      circle.textContent = n;
+    }
   });
   document.querySelectorAll('.wizard-panel').forEach((p, i) => p.classList.toggle('hidden', i + 1 !== step));
 
@@ -305,24 +395,36 @@ document.getElementById('wizard-file-input').addEventListener('change', async (e
   }
   e.target.value = '';
 });
-document.getElementById('wizard-file-drop').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('dragover'); });
-document.getElementById('wizard-file-drop').addEventListener('dragleave', e => { e.currentTarget.classList.remove('dragover'); });
+
+document.getElementById('wizard-file-drop').addEventListener('dragover', e => {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+});
+document.getElementById('wizard-file-drop').addEventListener('dragleave', e => {
+  e.currentTarget.classList.remove('drag-over');
+});
 document.getElementById('wizard-file-drop').addEventListener('drop', async e => {
-  e.preventDefault(); e.currentTarget.classList.remove('dragover');
-  for (const file of e.dataTransfer.files) { if (file.type === 'application/pdf') await uploadWizardDoc(file); }
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  for (const file of e.dataTransfer.files) {
+    if (file.type === 'application/pdf') await uploadWizardDoc(file);
+  }
 });
 
 async function uploadWizardDoc(file) {
-  // Save title first
-  await api(`/api/envelopes/${wizard.envelopeId}`, { method:'PUT', body: JSON.stringify({
-    title: document.getElementById('envelope-title').value || 'Untitled Envelope',
-    message: document.getElementById('envelope-message').value
-  })});
+  await api(`/api/envelopes/${wizard.envelopeId}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      title: document.getElementById('envelope-title').value || 'Untitled Envelope',
+      message: document.getElementById('envelope-message').value
+    })
+  });
 
   const fd = new FormData();
-  fd.append('file', file); fd.append('title', file.name);
+  fd.append('file', file);
+  fd.append('title', file.name);
   try {
-    const doc = await fetch(`/api/envelopes/${wizard.envelopeId}/documents`, { method:'POST', body:fd }).then(r => r.json());
+    const doc = await fetch(`/api/envelopes/${wizard.envelopeId}/documents`, { method: 'POST', body: fd }).then(r => r.json());
     if (doc.error) throw new Error(doc.error);
     wizard.documents.push(doc);
     renderWizardDocs();
@@ -333,9 +435,14 @@ async function uploadWizardDoc(file) {
 function renderWizardDocs() {
   document.getElementById('wizard-doc-list').innerHTML = wizard.documents.map((d, i) => `
     <div class="doc-list-item">
-      <span class="doc-list-name">${esc(d.title || d.filename)}</span>
-      <span class="doc-list-pages">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</span>
-      <button class="btn btn-sm btn-danger" onclick="removeWizardDoc(${i})">&times;</button>
+      <div class="doc-list-info">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+        <div>
+          <div class="doc-list-name">${esc(d.title || d.filename)}</div>
+          <div class="doc-list-pages">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</div>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-outline-danger" onclick="removeWizardDoc(${i})">Remove</button>
     </div>
   `).join('');
 }
@@ -343,7 +450,7 @@ function renderWizardDocs() {
 async function removeWizardDoc(idx) {
   const doc = wizard.documents[idx];
   try {
-    await api(`/api/envelopes/${wizard.envelopeId}/documents/${doc.id}`, { method:'DELETE' });
+    await api(`/api/envelopes/${wizard.envelopeId}/documents/${doc.id}`, { method: 'DELETE' });
     wizard.documents.splice(idx, 1);
     wizard.fields = wizard.fields.filter(f => f.document_id !== doc.id);
     renderWizardDocs();
@@ -352,10 +459,13 @@ async function removeWizardDoc(idx) {
 }
 
 document.getElementById('wizard-next-1').addEventListener('click', async () => {
-  await api(`/api/envelopes/${wizard.envelopeId}`, { method:'PUT', body: JSON.stringify({
-    title: document.getElementById('envelope-title').value || 'Untitled Envelope',
-    message: document.getElementById('envelope-message').value
-  })});
+  await api(`/api/envelopes/${wizard.envelopeId}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      title: document.getElementById('envelope-title').value || 'Untitled Envelope',
+      message: document.getElementById('envelope-message').value
+    })
+  });
   setWizardStep(2);
 });
 
@@ -366,7 +476,10 @@ document.getElementById('add-recipient-btn').addEventListener('click', async () 
   const role = document.getElementById('new-recipient-role').value;
   if (!name || !email) { toast('Name and email required', 'error'); return; }
   try {
-    const r = await api(`/api/envelopes/${wizard.envelopeId}/recipients`, { method:'POST', body: JSON.stringify({ name, email, role }) });
+    const r = await api(`/api/envelopes/${wizard.envelopeId}/recipients`, {
+      method: 'POST',
+      body: JSON.stringify({ name, email, role })
+    });
     wizard.recipients.push(r);
     document.getElementById('new-recipient-name').value = '';
     document.getElementById('new-recipient-email').value = '';
@@ -378,14 +491,15 @@ document.getElementById('add-recipient-btn').addEventListener('click', async () 
 function renderRecipientsList() {
   const el = document.getElementById('recipients-list');
   el.innerHTML = wizard.recipients.map((r, i) => `
-    <div class="recipient-item">
-      <span class="color-dot" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
-      <div class="recipient-item-info">
-        <strong>${esc(r.name)}</strong> &lt;${esc(r.email)}&gt;
-        <span class="badge-${r.role}">${r.role === 'signer' ? 'Signs' : 'CC'}</span>
-        <span class="meta-sm">Order: ${r.order_num}</span>
+    <div class="recipient-row">
+      <span class="recipient-color" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
+      <div class="recipient-info">
+        <div class="recipient-name">${esc(r.name)}</div>
+        <div class="recipient-email">${esc(r.email)}</div>
       </div>
-      <button class="btn btn-sm btn-danger" onclick="removeRecipient(${i})">&times;</button>
+      <span class="recipient-role-badge role-${r.role}">${r.role === 'signer' ? 'Signer' : 'CC'}</span>
+      <span class="recipient-order">#${r.order_num || i + 1}</span>
+      <button class="btn btn-sm btn-outline-danger" onclick="removeRecipient(${i})">Remove</button>
     </div>
   `).join('');
   document.getElementById('wizard-next-2').disabled = wizard.recipients.filter(x => x.role === 'signer').length === 0;
@@ -394,7 +508,7 @@ function renderRecipientsList() {
 async function removeRecipient(idx) {
   const r = wizard.recipients[idx];
   try {
-    await api(`/api/envelopes/${wizard.envelopeId}/recipients/${r.id}`, { method:'DELETE' });
+    await api(`/api/envelopes/${wizard.envelopeId}/recipients/${r.id}`, { method: 'DELETE' });
     wizard.recipients.splice(idx, 1);
     wizard.fields = wizard.fields.filter(f => f.recipient_id !== r.id);
     renderRecipientsList();
@@ -404,10 +518,18 @@ async function removeRecipient(idx) {
 document.getElementById('wizard-prev-2').addEventListener('click', () => setWizardStep(1));
 document.getElementById('wizard-next-2').addEventListener('click', () => setWizardStep(3));
 
-// Step 3: Field Editor
+// ==================== Step 3: Field Editor ====================
+let fieldEditorCleanup = null;
+
 async function renderFieldEditor() {
+  // Clean up previous event listeners
+  if (fieldEditorCleanup) {
+    fieldEditorCleanup();
+    fieldEditorCleanup = null;
+  }
+
   const container = document.getElementById('pdf-pages-container');
-  container.innerHTML = '<div class="loading">Loading PDF pages...</div>';
+  container.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>Loading PDF pages...</p></div>';
 
   // Render recipient selector
   const signers = wizard.recipients.filter(r => r.role === 'signer');
@@ -415,19 +537,30 @@ async function renderFieldEditor() {
     <button class="recipient-select-btn ${i === 0 ? 'active' : ''}" data-rid="${r.id}"
             style="border-left-color:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"
             onclick="selectFieldRecipient('${r.id}', this)">
+      <span class="recipient-dot" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
       ${esc(r.name)}
+      <span class="field-count">${wizard.fields.filter(f => f.recipient_id === r.id).length}</span>
     </button>
   `).join('');
   if (signers.length > 0) wizard.selectedRecipient = signers[0].id;
 
+  // Get container width for scaling
+  const canvasArea = document.querySelector('.field-canvas-area');
+  const availableWidth = Math.min(canvasArea.clientWidth - 48, 900); // 24px padding each side
+
   // Render PDF pages
   container.innerHTML = '';
+  const globalListeners = [];
+
   for (const doc of wizard.documents) {
     try {
       const pdf = await pdfjsLib.getDocument(`/api/envelopes/${wizard.envelopeId}/documents/${doc.id}/pdf`).promise;
       for (let p = 1; p <= pdf.numPages; p++) {
         const page = await pdf.getPage(p);
-        const viewport = page.getViewport({ scale: 1.2 });
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scale = availableWidth / unscaledViewport.width;
+        const viewport = page.getViewport({ scale });
+
         const wrapper = document.createElement('div');
         wrapper.className = 'pdf-page-wrapper';
         wrapper.dataset.docId = doc.id;
@@ -436,7 +569,8 @@ async function renderFieldEditor() {
         wrapper.style.height = viewport.height + 'px';
 
         const canvas = document.createElement('canvas');
-        canvas.width = viewport.width; canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport }).promise;
         wrapper.appendChild(canvas);
@@ -444,23 +578,35 @@ async function renderFieldEditor() {
         // Page label
         const label = document.createElement('div');
         label.className = 'page-label';
-        label.textContent = `${doc.title || doc.filename} — Page ${p}`;
-        wrapper.appendChild(label);
+        label.textContent = `${doc.title || doc.filename} - Page ${p} of ${pdf.numPages}`;
+        container.appendChild(label);
 
         // Drop zone for fields
-        wrapper.addEventListener('dragover', e => e.preventDefault());
-        wrapper.addEventListener('drop', e => handleFieldDrop(e, doc.id, p, wrapper));
+        wrapper.addEventListener('dragover', e => { e.preventDefault(); wrapper.classList.add('drop-target'); });
+        wrapper.addEventListener('dragleave', () => wrapper.classList.remove('drop-target'));
+        wrapper.addEventListener('drop', e => {
+          e.preventDefault();
+          wrapper.classList.remove('drop-target');
+          handleFieldDrop(e, doc.id, p, wrapper);
+        });
         wrapper.addEventListener('click', e => handleFieldClick(e, doc.id, p, wrapper));
 
         container.appendChild(wrapper);
 
         // Render existing fields for this page
-        wizard.fields.filter(f => f.document_id === doc.id && f.page_number === p).forEach(f => {
-          renderPlacedField(wrapper, f);
-        });
+        wizard.fields
+          .filter(f => f.document_id === doc.id && f.page_number === p)
+          .forEach(f => renderPlacedField(wrapper, f, globalListeners));
       }
-    } catch (err) { container.innerHTML += `<div class="empty-state">Failed to load ${doc.filename}</div>`; }
+    } catch (err) {
+      container.innerHTML += `<div class="empty-state">Failed to load ${esc(doc.filename)}: ${esc(err.message)}</div>`;
+    }
   }
+
+  // Store cleanup function
+  fieldEditorCleanup = () => {
+    globalListeners.forEach(({ type, fn }) => document.removeEventListener(type, fn));
+  };
 }
 
 function selectFieldRecipient(rid, btn) {
@@ -469,11 +615,21 @@ function selectFieldRecipient(rid, btn) {
   btn.classList.add('active');
 }
 
+function updateRecipientFieldCounts() {
+  document.querySelectorAll('.recipient-select-btn').forEach(btn => {
+    const rid = btn.dataset.rid;
+    const count = wizard.fields.filter(f => f.recipient_id === rid).length;
+    const countEl = btn.querySelector('.field-count');
+    if (countEl) countEl.textContent = count;
+  });
+}
+
 // Draggable field types
 document.querySelectorAll('.field-type-btn').forEach(btn => {
   btn.addEventListener('dragstart', e => {
     wizard.selectedFieldType = btn.dataset.type;
     e.dataTransfer.setData('text/plain', btn.dataset.type);
+    e.dataTransfer.effectAllowed = 'copy';
   });
   btn.addEventListener('click', () => {
     wizard.selectedFieldType = btn.dataset.type;
@@ -483,80 +639,156 @@ document.querySelectorAll('.field-type-btn').forEach(btn => {
 });
 
 function handleFieldDrop(e, docId, page, wrapper) {
-  e.preventDefault();
-  if (!wizard.selectedRecipient || !wizard.selectedFieldType) return;
+  if (!wizard.selectedRecipient) { toast('Select a recipient first', 'error'); return; }
+  const type = e.dataTransfer.getData('text/plain') || wizard.selectedFieldType;
+  if (!type) return;
   const rect = wrapper.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * 100;
-  const y = ((e.clientY - rect.top) / rect.height) * 100;
-  addField(docId, page, x, y, wizard.selectedFieldType, wrapper);
+  const defaults = FIELD_DEFAULTS[type] || { w: 15, h: 3.5 };
+  const x = Math.max(0, Math.min(100 - defaults.w, ((e.clientX - rect.left) / rect.width) * 100 - defaults.w / 2));
+  const y = Math.max(0, Math.min(100 - defaults.h, ((e.clientY - rect.top) / rect.height) * 100 - defaults.h / 2));
+  addField(docId, page, x, y, type, wrapper);
 }
 
 function handleFieldClick(e, docId, page, wrapper) {
   if (e.target.closest('.placed-field')) return;
   if (!wizard.selectedRecipient || !wizard.selectedFieldType) return;
   const rect = wrapper.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * 100;
-  const y = ((e.clientY - rect.top) / rect.height) * 100;
-  addField(docId, page, x, y, wizard.selectedFieldType, wrapper);
+  const type = wizard.selectedFieldType;
+  const defaults = FIELD_DEFAULTS[type] || { w: 15, h: 3.5 };
+  const x = Math.max(0, Math.min(100 - defaults.w, ((e.clientX - rect.left) / rect.width) * 100 - defaults.w / 2));
+  const y = Math.max(0, Math.min(100 - defaults.h, ((e.clientY - rect.top) / rect.height) * 100 - defaults.h / 2));
+  addField(docId, page, x, y, type, wrapper);
 }
 
 function addField(docId, page, x, y, type, wrapper) {
-  const defaults = FIELD_DEFAULTS[type] || { w:15, h:3 };
+  const defaults = FIELD_DEFAULTS[type] || { w: 15, h: 3.5 };
   const field = {
-    id: crypto.randomUUID(), document_id: docId, recipient_id: wizard.selectedRecipient,
-    type, page_number: page, x, y, width: defaults.w, height: defaults.h, required: 1, label: ''
+    id: crypto.randomUUID(),
+    document_id: docId,
+    recipient_id: wizard.selectedRecipient,
+    type, page_number: page,
+    x, y,
+    width: defaults.w,
+    height: defaults.h,
+    required: 1,
+    label: ''
   };
   wizard.fields.push(field);
-  renderPlacedField(wrapper, field);
+  renderPlacedField(wrapper, field, null);
+  updateRecipientFieldCounts();
 }
 
-function renderPlacedField(wrapper, field) {
-  const recipient = wizard.recipients.find(r => r.id === field.recipient_id);
-  const color = recipient?.color || RECIPIENT_COLORS[0];
+function renderPlacedField(wrapper, field, globalListeners) {
+  const recipientIdx = wizard.recipients.findIndex(r => r.id === field.recipient_id);
+  const recipient = wizard.recipients[recipientIdx];
+  const color = recipient?.color || RECIPIENT_COLORS[recipientIdx >= 0 ? recipientIdx % RECIPIENT_COLORS.length : 0];
+
   const el = document.createElement('div');
-  el.className = `placed-field field-${field.type}`;
+  el.className = `placed-field type-${field.type}`;
   el.dataset.fieldId = field.id;
-  el.style.left = field.x + '%'; el.style.top = field.y + '%';
-  el.style.width = field.width + '%'; el.style.height = field.height + '%';
+  el.style.left = field.x + '%';
+  el.style.top = field.y + '%';
+  el.style.width = field.width + '%';
+  el.style.height = field.height + '%';
   el.style.borderColor = color;
-  el.style.backgroundColor = color + '15';
+  el.style.backgroundColor = color + '18';
+
   el.innerHTML = `
-    <span class="field-label" style="color:${color}">${FIELD_LABELS[field.type] || field.type}</span>
-    <button class="field-delete" onclick="removeField('${field.id}', this)">&times;</button>
+    <span class="field-label" style="background:${color}">${FIELD_LABELS[field.type] || field.type}</span>
+    <span class="field-inner-label">${FIELD_LABELS[field.type]}</span>
+    <button class="field-delete" title="Remove field">&times;</button>
+    <div class="resize-handle"></div>
   `;
 
-  // Make draggable within page
-  let isDragging = false, startX, startY, origX, origY;
-  el.addEventListener('mousedown', e => {
+  // Delete button
+  el.querySelector('.field-delete').addEventListener('click', (e) => {
+    e.stopPropagation();
+    wizard.fields = wizard.fields.filter(f => f.id !== field.id);
+    el.remove();
+    updateRecipientFieldCounts();
+  });
+
+  // Drag to reposition
+  let isDragging = false, isResizing = false;
+  let startX, startY, origX, origY, origW, origH;
+
+  const onMouseDown = (e) => {
     if (e.target.classList.contains('field-delete')) return;
-    isDragging = true; startX = e.clientX; startY = e.clientY;
-    origX = field.x; origY = field.y;
     e.preventDefault();
-  });
-  document.addEventListener('mousemove', e => {
-    if (!isDragging) return;
+    e.stopPropagation();
+
     const rect = wrapper.getBoundingClientRect();
-    const dx = ((e.clientX - startX) / rect.width) * 100;
-    const dy = ((e.clientY - startY) / rect.height) * 100;
-    field.x = Math.max(0, Math.min(100 - field.width, origX + dx));
-    field.y = Math.max(0, Math.min(100 - field.height, origY + dy));
-    el.style.left = field.x + '%'; el.style.top = field.y + '%';
-  });
-  document.addEventListener('mouseup', () => { isDragging = false; });
+
+    if (e.target.classList.contains('resize-handle')) {
+      isResizing = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      origW = field.width;
+      origH = field.height;
+    } else {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      origX = field.x;
+      origY = field.y;
+    }
+
+    el.classList.add('selected');
+    // Deselect others
+    wrapper.querySelectorAll('.placed-field.selected').forEach(f => {
+      if (f !== el) f.classList.remove('selected');
+    });
+  };
+
+  const onMouseMove = (e) => {
+    if (!isDragging && !isResizing) return;
+    const rect = wrapper.getBoundingClientRect();
+
+    if (isDragging) {
+      const dx = ((e.clientX - startX) / rect.width) * 100;
+      const dy = ((e.clientY - startY) / rect.height) * 100;
+      field.x = Math.max(0, Math.min(100 - field.width, origX + dx));
+      field.y = Math.max(0, Math.min(100 - field.height, origY + dy));
+      el.style.left = field.x + '%';
+      el.style.top = field.y + '%';
+    } else if (isResizing) {
+      const dx = ((e.clientX - startX) / rect.width) * 100;
+      const dy = ((e.clientY - startY) / rect.height) * 100;
+      field.width = Math.max(3, Math.min(100 - field.x, origW + dx));
+      field.height = Math.max(2, Math.min(100 - field.y, origH + dy));
+      el.style.width = field.width + '%';
+      el.style.height = field.height + '%';
+    }
+  };
+
+  const onMouseUp = () => {
+    isDragging = false;
+    isResizing = false;
+  };
+
+  el.addEventListener('mousedown', onMouseDown);
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+
+  if (globalListeners) {
+    globalListeners.push({ type: 'mousemove', fn: onMouseMove });
+    globalListeners.push({ type: 'mouseup', fn: onMouseUp });
+  }
 
   wrapper.appendChild(el);
 }
 
-function removeField(fieldId, btn) {
-  wizard.fields = wizard.fields.filter(f => f.id !== fieldId);
-  btn.closest('.placed-field').remove();
-}
-
 document.getElementById('wizard-prev-3').addEventListener('click', () => setWizardStep(2));
 document.getElementById('wizard-next-3').addEventListener('click', async () => {
-  if (wizard.fields.length === 0) { toast('Place at least one field', 'error'); return; }
+  if (wizard.fields.length === 0) {
+    toast('Place at least one field on the document', 'error');
+    return;
+  }
   try {
-    await api(`/api/envelopes/${wizard.envelopeId}/fields`, { method:'POST', body: JSON.stringify({ fields: wizard.fields }) });
+    await api(`/api/envelopes/${wizard.envelopeId}/fields`, {
+      method: 'POST',
+      body: JSON.stringify({ fields: wizard.fields })
+    });
     setWizardStep(4);
   } catch (err) { toast(err.message, 'error'); }
 });
@@ -564,26 +796,46 @@ document.getElementById('wizard-next-3').addEventListener('click', async () => {
 // Step 4: Review
 function renderReview() {
   const signers = wizard.recipients.filter(r => r.role === 'signer');
+  const ccs = wizard.recipients.filter(r => r.role === 'cc');
   const title = document.getElementById('envelope-title').value || 'Untitled Envelope';
+  const message = document.getElementById('envelope-message').value;
+
   document.getElementById('review-summary').innerHTML = `
     <div class="review-card">
-      <h4>${esc(title)}</h4>
-      <div class="review-section">
-        <strong>Documents (${wizard.documents.length})</strong>
-        ${wizard.documents.map(d => `<div class="review-item">${esc(d.title || d.filename)} — ${d.page_count} pages</div>`).join('')}
+      <div class="review-header">
+        <h4>${esc(title)}</h4>
+        ${message ? `<p class="review-message">${esc(message)}</p>` : ''}
       </div>
       <div class="review-section">
-        <strong>Signing Order</strong>
-        ${signers.map((r, i) => `
+        <div class="review-section-title">Documents (${wizard.documents.length})</div>
+        ${wizard.documents.map(d => `
           <div class="review-item">
-            <span class="color-dot" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
-            ${i + 1}. ${esc(r.name)} &lt;${esc(r.email)}&gt;
-            <span class="meta-sm">${wizard.fields.filter(f => f.recipient_id === r.id).length} fields</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+            ${esc(d.title || d.filename)} <span style="color:var(--gray-500)">(${d.page_count} pages)</span>
           </div>
         `).join('')}
       </div>
       <div class="review-section">
-        <strong>Total Fields: ${wizard.fields.length}</strong>
+        <div class="review-section-title">Signing Order</div>
+        ${signers.map((r, i) => `
+          <div class="review-signer">
+            <span class="review-order">${i + 1}</span>
+            <span class="signer-color-dot" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
+            <div class="review-signer-info">
+              <strong>${esc(r.name)}</strong> &lt;${esc(r.email)}&gt;
+              <span class="review-field-count">${wizard.fields.filter(f => f.recipient_id === r.id).length} fields</span>
+            </div>
+          </div>
+        `).join('')}
+        ${ccs.length > 0 ? `
+          <div class="review-section-title" style="margin-top:12px;">CC Recipients</div>
+          ${ccs.map(r => `<div class="review-item">${esc(r.name)} &lt;${esc(r.email)}&gt;</div>`).join('')}
+        ` : ''}
+      </div>
+      <div class="review-summary-stats">
+        <div class="review-stat"><strong>${wizard.documents.length}</strong> document${wizard.documents.length !== 1 ? 's' : ''}</div>
+        <div class="review-stat"><strong>${signers.length}</strong> signer${signers.length !== 1 ? 's' : ''}</div>
+        <div class="review-stat"><strong>${wizard.fields.length}</strong> field${wizard.fields.length !== 1 ? 's' : ''}</div>
       </div>
     </div>
   `;
@@ -592,8 +844,8 @@ function renderReview() {
 document.getElementById('wizard-prev-4').addEventListener('click', () => setWizardStep(3));
 document.getElementById('wizard-send').addEventListener('click', async () => {
   try {
-    const result = await api(`/api/envelopes/${wizard.envelopeId}/send`, { method:'POST' });
-    toast('Envelope sent!', 'success');
+    await api(`/api/envelopes/${wizard.envelopeId}/send`, { method: 'POST' });
+    toast('Envelope sent successfully!', 'success');
     showView('envelope-detail-view');
     viewEnvelope(wizard.envelopeId);
   } catch (err) { toast(err.message, 'error'); }
@@ -619,8 +871,8 @@ async function openSigning(token) {
     signing.filledFields = new Set();
 
     document.getElementById('signing-info').innerHTML = `
-      <span>${esc(data.envelope_title)}</span>
-      <span class="meta-sm">from ${esc(data.sender_name)}</span>
+      <div class="signing-title">${esc(data.envelope_title)}</div>
+      <div class="signing-sender">from ${esc(data.sender_name)}</div>
     `;
 
     await renderSigningView();
@@ -631,17 +883,22 @@ async function openSigning(token) {
     document.getElementById('done-message').textContent = err.message;
     document.querySelector('.done-icon').textContent = '!';
     document.querySelector('.done-icon').style.background = '#dc2626';
+    document.querySelector('.done-icon').style.color = '#fff';
   }
 }
 
 // Access code
 document.getElementById('access-code-form').addEventListener('submit', async e => {
-  e.preventDefault(); document.getElementById('access-code-error').textContent = '';
+  e.preventDefault();
+  document.getElementById('access-code-error').textContent = '';
   try {
-    await api(`/api/sign/${signing.token}/verify-code`, { method:'POST', body: JSON.stringify({ code: e.target.code.value }) });
+    await api(`/api/sign/${signing.token}/verify-code`, {
+      method: 'POST',
+      body: JSON.stringify({ code: e.target.code.value })
+    });
     signing.data = await api(`/api/sign/${signing.token}?access_code=${encodeURIComponent(e.target.code.value)}`);
     signing.filledFields = new Set();
-    document.getElementById('signing-info').innerHTML = `<span>${esc(signing.data.envelope_title)}</span>`;
+    document.getElementById('signing-info').innerHTML = `<div class="signing-title">${esc(signing.data.envelope_title)}</div>`;
     await renderSigningView();
     showView('signing-view');
   } catch (err) { document.getElementById('access-code-error').textContent = err.message; }
@@ -649,6 +906,11 @@ document.getElementById('access-code-form').addEventListener('submit', async e =
 
 async function renderSigningView() {
   const container = document.getElementById('signing-pdf-container');
+  container.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>Loading document...</p></div>';
+
+  const wrapperEl = document.querySelector('.signing-body-wrapper');
+  const availableWidth = Math.min(wrapperEl.clientWidth - 48, 800);
+
   container.innerHTML = '';
 
   for (const doc of signing.data.documents) {
@@ -656,14 +918,18 @@ async function renderSigningView() {
       const pdf = await pdfjsLib.getDocument(`/api/sign/${signing.token}/documents/${doc.id}/pdf`).promise;
       for (let p = 1; p <= pdf.numPages; p++) {
         const page = await pdf.getPage(p);
-        const viewport = page.getViewport({ scale: 1.3 });
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scale = availableWidth / unscaledViewport.width;
+        const viewport = page.getViewport({ scale });
+
         const wrapper = document.createElement('div');
         wrapper.className = 'pdf-page-wrapper signing-page';
         wrapper.style.width = viewport.width + 'px';
         wrapper.style.height = viewport.height + 'px';
 
         const canvas = document.createElement('canvas');
-        canvas.width = viewport.width; canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
         await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
         wrapper.appendChild(canvas);
 
@@ -671,10 +937,12 @@ async function renderSigningView() {
         signing.data.completed_fields?.filter(f => f.document_id === doc.id && f.page_number === p).forEach(f => {
           const fel = document.createElement('div');
           fel.className = 'signing-field completed';
-          fel.style.left = f.x + '%'; fel.style.top = f.y + '%';
-          fel.style.width = f.width + '%'; fel.style.height = f.height + '%';
+          fel.style.left = f.x + '%';
+          fel.style.top = f.y + '%';
+          fel.style.width = f.width + '%';
+          fel.style.height = f.height + '%';
           if (f.signature_data && f.signature_data.startsWith('data:image')) {
-            fel.innerHTML = `<img src="${f.signature_data}" style="width:100%;height:100%;object-fit:contain;">`;
+            fel.innerHTML = `<img src="${f.signature_data}" alt="Signature">`;
           } else if (f.value) {
             fel.innerHTML = `<span class="field-value">${esc(f.value)}</span>`;
           }
@@ -684,16 +952,18 @@ async function renderSigningView() {
         // Render my fields
         signing.data.fields.filter(f => f.document_id === doc.id && f.page_number === p).forEach(f => {
           const fel = document.createElement('div');
-          fel.className = `signing-field mine field-${f.type} ${f.value ? 'filled' : 'empty'}`;
+          fel.className = `signing-field ${f.value ? 'filled' : 'unfilled'}`;
           fel.dataset.fieldId = f.id;
-          fel.style.left = f.x + '%'; fel.style.top = f.y + '%';
-          fel.style.width = f.width + '%'; fel.style.height = f.height + '%';
+          fel.style.left = f.x + '%';
+          fel.style.top = f.y + '%';
+          fel.style.width = f.width + '%';
+          fel.style.height = f.height + '%';
 
           if (f.value) {
             signing.filledFields.add(f.id);
             fel.innerHTML = getFieldDisplay(f);
           } else {
-            fel.innerHTML = `<span class="field-placeholder">${FIELD_LABELS[f.type]}</span>`;
+            fel.innerHTML = `<span class="placeholder-text">${FIELD_LABELS[f.type]}</span>`;
           }
 
           fel.addEventListener('click', () => handleSigningFieldClick(f, fel));
@@ -706,10 +976,20 @@ async function renderSigningView() {
   }
 
   updateSigningProgress();
+
+  // Auto-scroll to first unfilled field
+  setTimeout(() => {
+    const firstUnfilled = container.querySelector('.signing-field.unfilled');
+    if (firstUnfilled) {
+      firstUnfilled.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 500);
 }
 
 function getFieldDisplay(f) {
-  if (f.type === 'checkbox') return `<span class="checkbox-val">${f.value === 'true' ? '✓' : ''}</span>`;
+  if (f.type === 'checkbox') {
+    return `<span class="checkbox-display">${f.value === 'true' ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>' : ''}</span>`;
+  }
   return `<span class="field-value">${esc(f.value)}</span>`;
 }
 
@@ -736,12 +1016,16 @@ function handleSigningFieldClick(field, el) {
 
 async function fillSigningField(fieldId, value, el) {
   try {
-    await api(`/api/sign/${signing.token}/fields/${fieldId}`, { method:'POST', body: JSON.stringify({ value }) });
+    await api(`/api/sign/${signing.token}/fields/${fieldId}`, {
+      method: 'POST',
+      body: JSON.stringify({ value })
+    });
     const field = signing.data.fields.find(f => f.id === fieldId);
     if (field) field.value = value;
     signing.filledFields.add(fieldId);
-    el.classList.remove('empty'); el.classList.add('filled');
-    el.innerHTML = getFieldDisplay(field || { type:'text', value });
+    el.classList.remove('unfilled');
+    el.classList.add('filled');
+    el.innerHTML = getFieldDisplay(field || { type: 'text', value });
     updateSigningProgress();
   } catch (err) { toast(err.message, 'error'); }
 }
@@ -756,13 +1040,22 @@ function updateSigningProgress() {
 
 // Signature canvas
 let canvasCtx = null, isDrawing = false;
+
 function initSignatureCanvas() {
   const canvas = document.getElementById('signature-canvas');
-  canvasCtx = canvas.getContext('2d');
-  canvas.width = 500; canvas.height = 160;
-  canvasCtx.clearRect(0, 0, 500, 160);
-  canvasCtx.strokeStyle = '#4C1D95'; canvasCtx.lineWidth = 2.5;
-  canvasCtx.lineCap = 'round'; canvasCtx.lineJoin = 'round';
+  // Clone to remove old listeners
+  const newCanvas = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(newCanvas, canvas);
+
+  canvasCtx = newCanvas.getContext('2d');
+  newCanvas.width = newCanvas.offsetWidth || 500;
+  newCanvas.height = 160;
+  canvasCtx.clearRect(0, 0, newCanvas.width, newCanvas.height);
+  canvasCtx.strokeStyle = '#4C1D95';
+  canvasCtx.lineWidth = 2.5;
+  canvasCtx.lineCap = 'round';
+  canvasCtx.lineJoin = 'round';
+
   document.getElementById('typed-signature').value = '';
   document.getElementById('typed-preview').textContent = '';
   signing.signatureMode = 'draw';
@@ -770,17 +1063,39 @@ function initSignatureCanvas() {
   document.getElementById('sig-draw-panel').classList.remove('hidden');
   document.getElementById('sig-type-panel').classList.add('hidden');
 
-  // Remove old listeners by cloning
-  const newCanvas = canvas.cloneNode(true);
-  canvas.parentNode.replaceChild(newCanvas, canvas);
-  canvasCtx = newCanvas.getContext('2d');
-  canvasCtx.strokeStyle = '#4C1D95'; canvasCtx.lineWidth = 2.5;
-  canvasCtx.lineCap = 'round'; canvasCtx.lineJoin = 'round';
-
-  newCanvas.addEventListener('mousedown', e => { isDrawing = true; canvasCtx.beginPath(); canvasCtx.moveTo(e.offsetX, e.offsetY); });
-  newCanvas.addEventListener('mousemove', e => { if (!isDrawing) return; canvasCtx.lineTo(e.offsetX, e.offsetY); canvasCtx.stroke(); });
+  newCanvas.addEventListener('mousedown', e => {
+    isDrawing = true;
+    canvasCtx.beginPath();
+    const rect = newCanvas.getBoundingClientRect();
+    canvasCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+  });
+  newCanvas.addEventListener('mousemove', e => {
+    if (!isDrawing) return;
+    const rect = newCanvas.getBoundingClientRect();
+    canvasCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    canvasCtx.stroke();
+  });
   newCanvas.addEventListener('mouseup', () => isDrawing = false);
   newCanvas.addEventListener('mouseleave', () => isDrawing = false);
+
+  // Touch support
+  newCanvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    isDrawing = true;
+    canvasCtx.beginPath();
+    const rect = newCanvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    canvasCtx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+  });
+  newCanvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!isDrawing) return;
+    const rect = newCanvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    canvasCtx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+    canvasCtx.stroke();
+  });
+  newCanvas.addEventListener('touchend', () => isDrawing = false);
 }
 
 document.querySelectorAll('.sig-tab').forEach(t => t.addEventListener('click', () => {
@@ -789,10 +1104,12 @@ document.querySelectorAll('.sig-tab').forEach(t => t.addEventListener('click', (
   document.getElementById('sig-draw-panel').classList.toggle('hidden', t.dataset.sig !== 'draw');
   document.getElementById('sig-type-panel').classList.toggle('hidden', t.dataset.sig !== 'type');
 }));
+
 document.getElementById('clear-canvas').addEventListener('click', () => {
   const c = document.getElementById('signature-canvas');
   canvasCtx.clearRect(0, 0, c.width, c.height);
 });
+
 document.getElementById('typed-signature').addEventListener('input', e => {
   document.getElementById('typed-preview').textContent = e.target.value;
 });
@@ -806,7 +1123,10 @@ document.getElementById('apply-signature-btn').addEventListener('click', async (
   if (signing.signatureMode === 'draw') {
     const canvas = document.getElementById('signature-canvas');
     const pixels = canvasCtx.getImageData(0, 0, canvas.width, canvas.height).data;
-    if (!pixels.some((v, i) => i % 4 === 3 && v > 0)) { toast('Please draw your signature', 'error'); return; }
+    if (!pixels.some((v, i) => i % 4 === 3 && v > 0)) {
+      toast('Please draw your signature', 'error');
+      return;
+    }
     sigData = canvas.toDataURL('image/png');
     sigType = 'draw';
   } else {
@@ -817,15 +1137,17 @@ document.getElementById('apply-signature-btn').addEventListener('click', async (
 
   try {
     await api(`/api/sign/${signing.token}/fields/${fieldId}`, {
-      method:'POST', body: JSON.stringify({ signature_data: sigData, signature_type: sigType })
+      method: 'POST',
+      body: JSON.stringify({ signature_data: sigData, signature_type: sigType })
     });
     if (field) field.value = sigType === 'type' ? sigData : '[signed]';
     signing.filledFields.add(fieldId);
-    el.classList.remove('empty'); el.classList.add('filled');
+    el.classList.remove('unfilled');
+    el.classList.add('filled');
     if (sigType === 'draw') {
-      el.innerHTML = `<img src="${sigData}" style="width:100%;height:100%;object-fit:contain;">`;
+      el.innerHTML = `<img src="${sigData}" alt="Signature">`;
     } else {
-      el.innerHTML = `<span class="field-value sig-typed">${esc(sigData)}</span>`;
+      el.innerHTML = `<span class="field-value typed-sig">${esc(sigData)}</span>`;
     }
     hideModal('signature-modal');
     updateSigningProgress();
@@ -835,42 +1157,55 @@ document.getElementById('apply-signature-btn').addEventListener('click', async (
 // Finish signing
 document.getElementById('finish-signing-btn').addEventListener('click', async () => {
   try {
-    await api(`/api/sign/${signing.token}/complete`, { method:'POST' });
+    await api(`/api/sign/${signing.token}/complete`, { method: 'POST' });
     showView('signing-done-view');
     document.getElementById('done-title').textContent = 'Document Signed!';
     document.getElementById('done-message').textContent = 'Thank you. The document owner will be notified.';
-    document.querySelector('.done-icon').textContent = '✓';
+    document.querySelector('.done-icon').textContent = '\u2713';
     document.querySelector('.done-icon').style.background = '#16a34a';
+    document.querySelector('.done-icon').style.color = '#fff';
   } catch (err) { toast(err.message, 'error'); }
 });
 
 // Decline
-document.getElementById('decline-btn').addEventListener('click', () => { document.getElementById('decline-reason').value = ''; showModal('decline-modal'); });
+document.getElementById('decline-btn').addEventListener('click', () => {
+  document.getElementById('decline-reason').value = '';
+  showModal('decline-modal');
+});
 document.getElementById('confirm-decline-btn').addEventListener('click', async () => {
   try {
-    await api(`/api/sign/${signing.token}/decline`, { method:'POST', body: JSON.stringify({ reason: document.getElementById('decline-reason').value }) });
+    await api(`/api/sign/${signing.token}/decline`, {
+      method: 'POST',
+      body: JSON.stringify({ reason: document.getElementById('decline-reason').value })
+    });
     hideModal('decline-modal');
     showView('signing-done-view');
     document.getElementById('done-title').textContent = 'Signing Declined';
     document.getElementById('done-message').textContent = 'The document owner has been notified.';
-    document.querySelector('.done-icon').textContent = '✗';
+    document.querySelector('.done-icon').textContent = '\u2717';
     document.querySelector('.done-icon').style.background = '#dc2626';
+    document.querySelector('.done-icon').style.color = '#fff';
   } catch (err) { toast(err.message, 'error'); }
 });
 
 // ==================== Admin ====================
-async function loadAdminPanel() { loadAdminStats(); loadAdminUsers(); loadAdminInvitations(); loadAdminEnvelopes(); }
+async function loadAdminPanel() {
+  loadAdminStats();
+  loadAdminUsers();
+  loadAdminInvitations();
+  loadAdminEnvelopes();
+}
 
 async function loadAdminStats() {
   try {
     const s = await api('/api/admin/stats');
     document.getElementById('admin-stats').innerHTML = `
-      <div class="stat-card"><div class="stat-value">${s.users}</div><div class="stat-label">Users</div></div>
-      <div class="stat-card"><div class="stat-value">${s.activeUsers}</div><div class="stat-label">Active</div></div>
+      <div class="stat-card"><div class="stat-value">${s.users}</div><div class="stat-label">Total Users</div></div>
+      <div class="stat-card"><div class="stat-value">${s.activeUsers}</div><div class="stat-label">Active Users</div></div>
       <div class="stat-card"><div class="stat-value">${s.envelopes}</div><div class="stat-label">Envelopes</div></div>
       <div class="stat-card"><div class="stat-value">${s.sentEnvelopes}</div><div class="stat-label">In Progress</div></div>
       <div class="stat-card"><div class="stat-value">${s.completedEnvelopes}</div><div class="stat-label">Completed</div></div>
-      <div class="stat-card"><div class="stat-value">${s.pendingInvitations}</div><div class="stat-label">Invites</div></div>
+      <div class="stat-card"><div class="stat-value">${s.pendingInvitations}</div><div class="stat-label">Pending Invites</div></div>
     `;
   } catch {}
 }
@@ -881,78 +1216,131 @@ async function loadAdminUsers() {
     document.getElementById('admin-users-list').innerHTML = `<table class="admin-table">
       <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Envelopes</th><th>Actions</th></tr></thead>
       <tbody>${users.map(u => `<tr>
-        <td>${esc(u.name)}</td><td>${esc(u.email)}</td>
+        <td><strong>${esc(u.name)}</strong></td>
+        <td>${esc(u.email)}</td>
         <td><span class="role-badge role-${u.role}">${u.role}</span></td>
-        <td><span class="${u.is_active ? 'status-active' : 'status-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td><span class="status-dot ${u.is_active ? 'active' : 'inactive'}"></span> ${u.is_active ? 'Active' : 'Inactive'}</td>
         <td>${u.envelope_count}</td>
         <td>${u.id !== currentUser.id ? `
-          <button class="btn btn-sm" onclick="toggleUserRole(${u.id},'${u.role}')">${u.role==='admin'?'→ User':'→ Admin'}</button>
-          <button class="btn btn-sm" onclick="toggleUserStatus(${u.id},${u.is_active})">${u.is_active?'Deactivate':'Activate'}</button>
-        ` : '—'}</td>
+          <div class="action-btns">
+            <button class="btn btn-sm" onclick="toggleUserRole(${u.id},'${u.role}')">Make ${u.role === 'admin' ? 'User' : 'Admin'}</button>
+            <button class="btn btn-sm" onclick="toggleUserStatus(${u.id},${u.is_active})">${u.is_active ? 'Deactivate' : 'Activate'}</button>
+            <button class="btn btn-sm" onclick="openResetPw(${u.id},'${esc(u.name)}')">Reset PW</button>
+          </div>
+        ` : '<span style="color:var(--gray-400)">You</span>'}</td>
       </tr>`).join('')}</tbody></table>`;
   } catch {}
+}
+
+function openResetPw(userId, name) {
+  document.getElementById('reset-pw-user-id').value = userId;
+  document.getElementById('reset-pw-user-label').textContent = `Reset password for ${name}`;
+  showModal('reset-pw-modal');
 }
 
 async function loadAdminInvitations() {
   try {
     const inv = await api('/api/admin/invitations');
-    document.getElementById('admin-invitations-list').innerHTML = inv.length === 0 ? '<div class="empty-state">No invitations.</div>' :
-    `<table class="admin-table"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
-    <tbody>${inv.map(i => {
-      const expired = new Date(i.expires_at) < new Date();
-      const st = i.accepted ? 'Accepted' : (expired ? 'Expired' : 'Pending');
-      return `<tr><td>${esc(i.name)}</td><td>${esc(i.email)}</td><td>${st}</td><td>
-        ${!i.accepted && !expired ? `<button class="btn btn-sm" onclick="copyToClipboard('${location.origin}/invite/${i.token}')">Copy Link</button>` : ''}
-      </td></tr>`;
-    }).join('')}</tbody></table>`;
+    document.getElementById('admin-invitations-list').innerHTML = inv.length === 0
+      ? '<div class="empty-state"><p>No invitations yet.</p></div>'
+      : `<table class="admin-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>${inv.map(i => {
+          const expired = new Date(i.expires_at) < new Date();
+          const st = i.accepted ? 'Accepted' : (expired ? 'Expired' : 'Pending');
+          const stClass = i.accepted ? 'status-completed' : (expired ? 'status-voided' : 'status-sent');
+          return `<tr>
+            <td>${esc(i.name)}</td>
+            <td>${esc(i.email)}</td>
+            <td><span class="role-badge role-${i.role || 'user'}">${i.role || 'user'}</span></td>
+            <td><span class="status-badge ${stClass}">${st}</span></td>
+            <td>${!i.accepted && !expired ? `
+              <button class="btn btn-sm" onclick="copyToClipboard('${location.origin}/invite/${i.token}')">Copy Link</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="revokeInvite('${i.id}')">Revoke</button>
+            ` : ''}</td>
+          </tr>`;
+        }).join('')}</tbody></table>`;
   } catch {}
+}
+
+async function revokeInvite(id) {
+  if (!confirm('Revoke this invitation?')) return;
+  try {
+    await api(`/api/admin/invitations/${id}`, { method: 'DELETE' });
+    toast('Invitation revoked', 'success');
+    loadAdminInvitations();
+    loadAdminStats();
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 async function loadAdminEnvelopes() {
   try {
     const envs = await api('/api/admin/envelopes');
-    document.getElementById('admin-envelopes-list').innerHTML = envs.length === 0 ? '<div class="empty-state">No envelopes.</div>' :
-    envs.map(e => `<div class="envelope-row">
-      <div class="env-title">${esc(e.title)}</div>
-      <div class="env-meta">${esc(e.owner_name)}</div>
-      <div class="env-recipients">${e.signed_count}/${e.total_signers}</div>
-      <div><span class="status-badge status-${e.status}">${e.status}</span></div>
-      <div class="env-date">${fmtDate(e.updated_at)}</div>
-    </div>`).join('');
+    document.getElementById('admin-envelopes-list').innerHTML = envs.length === 0
+      ? '<div class="empty-state"><p>No envelopes.</p></div>'
+      : envs.map(e => `<div class="envelope-row" onclick="viewEnvelope('${e.id}')">
+          <div class="envelope-title">${esc(e.title)}</div>
+          <div class="envelope-meta">${esc(e.owner_name)}</div>
+          <div class="envelope-recipients">${e.signed_count || 0}/${e.total_signers || 0} signed</div>
+          <div><span class="status-badge status-${e.status}">${e.status}</span></div>
+          <div class="envelope-date">${fmtDate(e.updated_at)}</div>
+        </div>`).join('');
   } catch {}
 }
 
 async function toggleUserRole(id, role) {
-  if (!confirm('Change role?')) return;
-  try { await api(`/api/admin/users/${id}/role`, { method:'PATCH', body: JSON.stringify({ role: role==='admin'?'user':'admin' }) }); loadAdminUsers(); } catch (e) { toast(e.message,'error'); }
+  if (!confirm(`Change this user's role?`)) return;
+  try {
+    await api(`/api/admin/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role: role === 'admin' ? 'user' : 'admin' }) });
+    loadAdminUsers();
+  } catch (e) { toast(e.message, 'error'); }
 }
+
 async function toggleUserStatus(id, active) {
-  if (!confirm(active ? 'Deactivate?' : 'Activate?')) return;
-  try { await api(`/api/admin/users/${id}/status`, { method:'PATCH', body: JSON.stringify({ is_active: !active }) }); loadAdminUsers(); } catch (e) { toast(e.message,'error'); }
+  if (!confirm(active ? 'Deactivate this user?' : 'Activate this user?')) return;
+  try {
+    await api(`/api/admin/users/${id}/status`, { method: 'PATCH', body: JSON.stringify({ is_active: !active }) });
+    loadAdminUsers();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
 // Admin tabs
 document.querySelectorAll('.admin-tab').forEach(t => t.addEventListener('click', () => {
-  document.querySelectorAll('.admin-tab').forEach(x => x.classList.remove('active')); t.classList.add('active');
+  document.querySelectorAll('.admin-tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
   document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.add('hidden'));
   document.getElementById(`admin-${t.dataset.adminTab}-tab`)?.classList.remove('hidden');
 }));
 
 // Invite modal
-['invite-user-btn','invite-user-btn-2'].forEach(id => {
+['invite-user-btn', 'invite-user-btn-2'].forEach(id => {
   document.getElementById(id)?.addEventListener('click', () => {
     document.getElementById('invite-result').classList.add('hidden');
-    document.getElementById('invite-form').reset(); showModal('invite-modal');
+    document.getElementById('invite-form').reset();
+    showModal('invite-modal');
   });
 });
+
 document.getElementById('invite-form').addEventListener('submit', async e => {
-  e.preventDefault(); const f = e.target;
+  e.preventDefault();
+  const f = e.target;
   try {
-    const r = await api('/api/admin/invite', { method:'POST', body: JSON.stringify({ name:f.name.value, email:f.email.value, role:f.role.value }) });
+    const r = await api('/api/admin/invite', {
+      method: 'POST',
+      body: JSON.stringify({ name: f.name.value, email: f.email.value, role: f.role.value })
+    });
     const link = `${location.origin}/invite/${r.token}`;
     document.getElementById('invite-result').classList.remove('hidden');
-    document.getElementById('invite-result').innerHTML = `<p style="color:var(--success)">Invitation created!</p><div class="invite-link-box"><a href="${link}">${link}</a><button class="btn btn-sm" onclick="copyToClipboard('${link}')" style="margin-top:8px;">Copy</button></div>`;
-    loadAdminInvitations(); loadAdminStats();
+    document.getElementById('invite-result').innerHTML = `
+      <div class="invite-success">
+        <p>Invitation created successfully!</p>
+        <div class="invite-link-box">
+          <input type="text" value="${link}" readonly onclick="this.select()">
+          <button class="btn btn-sm btn-primary" onclick="copyToClipboard('${link}')">Copy</button>
+        </div>
+      </div>
+    `;
+    loadAdminInvitations();
+    loadAdminStats();
   } catch (err) { toast(err.message, 'error'); }
 });
 
@@ -960,14 +1348,19 @@ document.getElementById('invite-form').addEventListener('submit', async e => {
 document.getElementById('reset-pw-form').addEventListener('submit', async e => {
   e.preventDefault();
   try {
-    await api(`/api/admin/users/${document.getElementById('reset-pw-user-id').value}/reset-password`, { method:'POST', body: JSON.stringify({ password: e.target.password.value }) });
-    toast('Password reset', 'success'); hideModal('reset-pw-modal'); e.target.reset();
+    await api(`/api/admin/users/${document.getElementById('reset-pw-user-id').value}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ password: e.target.password.value })
+    });
+    toast('Password reset successfully', 'success');
+    hideModal('reset-pw-modal');
+    e.target.reset();
   } catch (err) { toast(err.message, 'error'); }
 });
 
 // ==================== Modals ====================
 document.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', () => b.closest('.modal').classList.add('hidden')));
-document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); }));
+document.querySelectorAll('.modal-backdrop').forEach(m => m.addEventListener('click', () => m.closest('.modal').classList.add('hidden')));
 
 // ==================== URL Routing ====================
 function checkUrl() {
@@ -982,15 +1375,21 @@ function checkUrl() {
 async function handleInvite(token) {
   try {
     const inv = await api(`/api/auth/invite/${token}`);
-    inviteToken = token; showView('auth-view');
+    inviteToken = token;
+    showView('auth-view');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelector('[data-tab="register"]').classList.add('active');
     document.getElementById('login-form').classList.add('hidden');
     document.getElementById('register-form').classList.remove('hidden');
     const form = document.getElementById('register-form');
-    form.name.value = inv.name; form.email.value = inv.email; form.email.readOnly = true;
+    form.name.value = inv.name;
+    form.email.value = inv.email;
+    form.email.readOnly = true;
     document.querySelector('#register-form button[type="submit"]').textContent = 'Accept Invitation';
-  } catch { toast('Invalid or expired invitation', 'error'); showView('auth-view'); }
+  } catch {
+    toast('Invalid or expired invitation', 'error');
+    showView('auth-view');
+  }
 }
 
 // ==================== Init ====================

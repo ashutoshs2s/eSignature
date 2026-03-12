@@ -1,8 +1,11 @@
-/* ==========================================================
+/* ==========================================================================
    BuyerForesight eSign — Main Stylesheet
-   ========================================================== */
+   Purple-branded DocuSign-like eSignature application
+   ========================================================================== */
 
-/* ---------- Reset & Custom Properties ---------- */
+/* -----------------------------------------------------------------------
+   1. RESET & CUSTOM PROPERTIES
+   ----------------------------------------------------------------------- */
 *, *::before, *::after {
   margin: 0;
   padding: 0;
@@ -10,10 +13,14 @@
 }
 
 :root {
+  /* BuyerForesight purple palette */
   --primary: #5B21B6;
   --primary-dark: #4C1D95;
   --primary-light: #7C3AED;
   --primary-bg: #ede9fe;
+  --primary-ring: rgba(91, 33, 182, 0.12);
+
+  /* Semantic colours */
   --success: #16a34a;
   --success-bg: #f0fdf4;
   --warning: #ea580c;
@@ -22,20 +29,28 @@
   --danger-bg: #fef2f2;
   --blue: #2563eb;
   --blue-bg: #eff6ff;
+
+  /* Neutrals */
   --gray-50: #f9fafb;
   --gray-100: #f3f4f6;
   --gray-200: #e5e7eb;
   --gray-300: #d1d5db;
   --gray-400: #9ca3af;
   --gray-500: #6b7280;
+  --gray-600: #4b5563;
   --gray-700: #374151;
+  --gray-800: #1f2937;
   --gray-900: #111827;
+
+  /* Radii & shadows */
   --radius: 8px;
   --radius-lg: 12px;
-  --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
-  --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+
+  /* Typography */
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
@@ -44,12 +59,15 @@ body {
   color: var(--gray-900);
   line-height: 1.5;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* ---------- Header ---------- */
+/* -----------------------------------------------------------------------
+   2. HEADER & NAVIGATION
+   ----------------------------------------------------------------------- */
 header {
   background: #fff;
   border-bottom: 1px solid var(--gray-200);
@@ -92,7 +110,8 @@ nav { display: flex; gap: 4px; }
   cursor: pointer;
   font-size: 14px;
   color: var(--gray-500);
-  transition: all .15s;
+  font-family: var(--font);
+  transition: color 0.15s, background 0.15s;
 }
 .nav-btn:hover { color: var(--gray-900); background: var(--gray-100); }
 .nav-btn.active { color: var(--primary); background: var(--primary-bg); font-weight: 500; }
@@ -106,7 +125,9 @@ nav { display: flex; gap: 4px; }
   color: var(--gray-500);
 }
 
-/* ---------- Buttons ---------- */
+/* -----------------------------------------------------------------------
+   3. BUTTONS
+   ----------------------------------------------------------------------- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -119,21 +140,37 @@ nav { display: flex; gap: 4px; }
   font-size: 14px;
   font-family: var(--font);
   cursor: pointer;
-  transition: all .15s;
-  text-decoration: none;
   color: var(--gray-700);
   line-height: 1.4;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
-.btn:hover { background: var(--gray-50); }
+.btn:hover { background: var(--gray-50); border-color: var(--gray-400); }
+.btn:active { transform: translateY(1px); }
+
 .btn-sm { padding: 4px 10px; font-size: 13px; }
 .btn-lg { padding: 12px 24px; font-size: 16px; }
-.btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
-.btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
-.btn-danger { color: var(--danger); border-color: var(--danger); }
-.btn-danger:hover { background: var(--danger-bg); }
 .btn-full { width: 100%; }
 
-/* ---------- Form Inputs ---------- */
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.btn-primary:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-danger:hover { background: var(--danger-bg); }
+
+/* -----------------------------------------------------------------------
+   4. FORM INPUTS
+   ----------------------------------------------------------------------- */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -147,24 +184,26 @@ textarea,
   font-size: 14px;
   font-family: var(--font);
   outline: none;
-  transition: border .15s;
   width: 100%;
   background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-input:focus, textarea:focus, .sig-input:focus, .select-input:focus {
+input:focus,
+textarea:focus,
+.sig-input:focus,
+.select-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(91,33,182,.1);
+  box-shadow: 0 0 0 3px var(--primary-ring);
 }
 .input-lg { padding: 14px 16px; font-size: 16px; }
-
 .select-input { appearance: none; cursor: pointer; }
-
 .form-error { color: var(--danger); font-size: 13px; min-height: 20px; }
 .help-text { font-size: 13px; color: var(--gray-500); margin-top: 4px; }
-
 label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: block; margin-bottom: 4px; }
 
-/* ---------- Auth View ---------- */
+/* -----------------------------------------------------------------------
+   5. AUTH VIEW
+   ----------------------------------------------------------------------- */
 .auth-container {
   max-width: 420px;
   margin: 80px auto;
@@ -195,7 +234,7 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   color: var(--gray-500);
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
-  transition: all .15s;
+  transition: color 0.15s, border-color 0.15s;
 }
 .tab:hover { color: var(--gray-700); }
 .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 500; }
@@ -213,7 +252,9 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   margin-top: 12px;
 }
 
-/* ---------- Container ---------- */
+/* -----------------------------------------------------------------------
+   6. LAYOUT CONTAINERS
+   ----------------------------------------------------------------------- */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -227,16 +268,18 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   margin-bottom: 24px;
 }
 .section-header h2 { font-size: 22px; font-weight: 700; }
-
 .view-subtitle { color: var(--gray-500); font-size: 14px; margin-top: 2px; }
 
-/* ---------- Dashboard — Filter Bar ---------- */
+/* -----------------------------------------------------------------------
+   7. DASHBOARD — FILTERS & ENVELOPE LIST
+   ----------------------------------------------------------------------- */
 .filter-bar {
   display: flex;
   gap: 6px;
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
+.filter-btn,
 .filter-bar .pill {
   padding: 6px 14px;
   border-radius: 99px;
@@ -245,17 +288,18 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   font-size: 13px;
   cursor: pointer;
   color: var(--gray-700);
-  transition: all .15s;
   font-family: var(--font);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
+.filter-btn:hover,
 .filter-bar .pill:hover { border-color: var(--primary); color: var(--primary); }
+.filter-btn.active,
 .filter-bar .pill.active {
   background: var(--primary);
   color: #fff;
   border-color: var(--primary);
 }
 
-/* ---------- Dashboard — Envelope List ---------- */
 .envelope-list {
   background: #fff;
   border: 1px solid var(--gray-200);
@@ -269,8 +313,8 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   padding: 14px 20px;
   border-bottom: 1px solid var(--gray-100);
   cursor: pointer;
-  transition: background .1s;
   gap: 16px;
+  transition: background 0.1s;
 }
 .envelope-row:last-child { border-bottom: none; }
 .envelope-row:hover { background: var(--gray-50); }
@@ -284,14 +328,12 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .envelope-row .envelope-recipients {
   font-size: 13px;
   color: var(--gray-500);
   width: 120px;
   flex-shrink: 0;
 }
-
 .envelope-row .envelope-date {
   font-size: 13px;
   color: var(--gray-500);
@@ -300,7 +342,9 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   text-align: right;
 }
 
-/* ---------- Status Badges ---------- */
+/* -----------------------------------------------------------------------
+   8. STATUS BADGES
+   ----------------------------------------------------------------------- */
 .status-badge {
   display: inline-block;
   padding: 2px 10px;
@@ -310,15 +354,17 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   text-transform: capitalize;
   flex-shrink: 0;
 }
-.status-draft { background: var(--gray-100); color: var(--gray-700); }
-.status-sent { background: var(--blue-bg); color: var(--blue); }
-.status-pending { background: var(--primary-bg); color: var(--primary-light); }
+.status-draft    { background: var(--gray-100); color: var(--gray-700); }
+.status-sent     { background: var(--blue-bg);  color: var(--blue); }
+.status-pending  { background: var(--primary-bg); color: var(--primary-light); }
 .status-completed { background: var(--success-bg); color: var(--success); }
-.status-signed { background: var(--success-bg); color: var(--success); }
+.status-signed   { background: var(--success-bg); color: var(--success); }
 .status-declined { background: var(--danger-bg); color: var(--danger); }
-.status-voided { background: var(--gray-100); color: var(--gray-500); text-decoration: line-through; }
+.status-voided   { background: var(--gray-100); color: var(--gray-500); text-decoration: line-through; }
 
-/* ---------- Envelope Detail ---------- */
+/* -----------------------------------------------------------------------
+   9. ENVELOPE DETAIL
+   ----------------------------------------------------------------------- */
 .back-btn { margin-bottom: 20px; }
 
 .detail-header {
@@ -378,12 +424,13 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 .audit-item .action { font-weight: 500; }
 .audit-item .time { color: var(--gray-500); font-size: 12px; }
 
-/* ---------- Wizard View ---------- */
+/* -----------------------------------------------------------------------
+   10. WIZARD VIEW — STEPPER
+   ----------------------------------------------------------------------- */
 .wizard-header {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 0;
   padding: 24px;
   background: #fff;
   border-bottom: 1px solid var(--gray-200);
@@ -398,6 +445,8 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   position: relative;
   min-width: 120px;
 }
+
+/* Connecting line between steps */
 .wizard-step:not(:last-child)::after {
   content: '';
   position: absolute;
@@ -406,8 +455,11 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   width: calc(100% - 40px);
   height: 2px;
   background: var(--gray-300);
+  transition: background 0.3s;
 }
-.wizard-step.completed:not(:last-child)::after { background: var(--primary); }
+.wizard-step.completed:not(:last-child)::after {
+  background: var(--success);
+}
 
 .step-circle {
   width: 32px;
@@ -422,10 +474,21 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   font-weight: 600;
   position: relative;
   z-index: 1;
-  transition: all .2s;
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s;
 }
-.wizard-step.active .step-circle { background: var(--primary); color: #fff; }
-.wizard-step.completed .step-circle { background: var(--success); color: #fff; }
+
+/* Active step: purple circle */
+.wizard-step.active .step-circle {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 0 0 4px var(--primary-ring);
+}
+
+/* Completed step: green circle (checkmark provided by HTML) */
+.wizard-step.completed .step-circle {
+  background: var(--success);
+  color: #fff;
+}
 
 .step-label {
   font-size: 12px;
@@ -458,25 +521,35 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   border-top: 1px solid var(--gray-200);
 }
 
-/* -- File Drop -- */
+/* -----------------------------------------------------------------------
+   11. WIZARD — FILE DROP ZONE
+   ----------------------------------------------------------------------- */
 .file-drop {
   border: 2px dashed var(--gray-300);
   border-radius: var(--radius);
   padding: 48px 24px;
   text-align: center;
   cursor: pointer;
-  transition: border-color .15s, background .15s;
   position: relative;
+  transition: border-color 0.15s, background 0.15s;
 }
-.file-drop:hover, .file-drop.drag-over {
+.file-drop:hover,
+.file-drop.drag-over {
   border-color: var(--primary);
-  background: rgba(91,33,182,.03);
+  background: rgba(91, 33, 182, 0.03);
 }
-.file-drop input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.file-drop input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
 .file-drop p { color: var(--gray-500); font-size: 14px; }
 .file-drop .drop-icon { font-size: 32px; margin-bottom: 8px; color: var(--gray-400); }
 
-/* -- Doc List (wizard uploaded docs) -- */
+/* -----------------------------------------------------------------------
+   12. WIZARD — DOCUMENT & RECIPIENT LISTS
+   ----------------------------------------------------------------------- */
 .doc-list {
   list-style: none;
   display: flex;
@@ -504,7 +577,6 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 }
 .doc-list-item .remove-doc:hover { color: var(--danger); }
 
-/* -- Recipients List (wizard) -- */
 .recipients-list {
   display: flex;
   flex-direction: column;
@@ -528,7 +600,12 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   flex-shrink: 0;
 }
 .recipient-row .recipient-info { flex: 1; min-width: 0; }
-.recipient-row .recipient-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recipient-row .recipient-info span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .recipient-row .recipient-info small { color: var(--gray-500); font-size: 12px; }
 .recipient-row .remove-recipient {
   background: none;
@@ -548,7 +625,9 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 .add-recipient-row input { flex: 1; }
 .add-recipient-row .btn { flex-shrink: 0; align-self: flex-end; }
 
-/* ---------- Field Editor (Step 3) ---------- */
+/* -----------------------------------------------------------------------
+   13. FIELD EDITOR (Step 3) — LAYOUT
+   ----------------------------------------------------------------------- */
 .field-editor {
   display: flex;
   height: calc(100vh - 170px);
@@ -559,8 +638,9 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   overflow: hidden;
 }
 
+/* Left sidebar — 260px */
 .field-sidebar {
-  width: 280px;
+  width: 260px;
   background: #fff;
   border-right: 1px solid var(--gray-200);
   display: flex;
@@ -576,16 +656,19 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 .field-sidebar-section h4 {
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: .5px;
+  letter-spacing: 0.5px;
   color: var(--gray-500);
   margin-bottom: 10px;
 }
 
+/* Recipient selector buttons */
 .field-recipient-selector {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
+
+.recipient-select-btn,
 .field-recipient-btn {
   display: flex;
   align-items: center;
@@ -599,16 +682,19 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   font-size: 13px;
   font-family: var(--font);
   text-align: left;
-  transition: all .1s;
   color: var(--gray-700);
+  transition: background 0.1s, border-color 0.1s;
 }
+.recipient-select-btn:hover,
 .field-recipient-btn:hover { background: var(--gray-50); }
+.recipient-select-btn.active,
 .field-recipient-btn.active {
   background: var(--gray-50);
   border-color: var(--gray-300);
   font-weight: 600;
 }
 
+/* Field type buttons in grid */
 .field-types {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -626,10 +712,14 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   font-size: 12px;
   font-family: var(--font);
   color: var(--gray-700);
-  transition: all .1s;
   user-select: none;
+  transition: border-color 0.1s, color 0.1s, box-shadow 0.1s;
 }
-.field-type-btn:hover { border-color: var(--primary); color: var(--primary); }
+.field-type-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: var(--shadow);
+}
 .field-type-btn:active { cursor: grabbing; }
 .field-type-btn .icon { font-size: 14px; flex-shrink: 0; }
 
@@ -642,10 +732,16 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 }
 .field-sidebar-actions .btn { flex: 1; }
 
-/* -- PDF Pages Canvas -- */
-.pdf-pages {
+/* -----------------------------------------------------------------------
+   14. FIELD EDITOR — PDF CANVAS AREA
+   ----------------------------------------------------------------------- */
+.field-canvas-area {
   flex: 1;
   overflow-y: auto;
+  background: var(--gray-100);
+}
+
+.pdf-pages {
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -658,29 +754,43 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   background: #fff;
   box-shadow: var(--shadow-md);
   border-radius: 2px;
+  max-width: 900px;
+  width: 100%;
   overflow: visible;
 }
-.pdf-page-wrapper canvas { display: block; }
+.pdf-page-wrapper canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 
-/* -- Placed Fields -- */
+/* -----------------------------------------------------------------------
+   15. PLACED FIELDS (editor — absolute inside pdf-page-wrapper)
+   ----------------------------------------------------------------------- */
 .placed-field {
   position: absolute;
   border: 2px solid var(--primary);
   border-radius: 3px;
-  background: rgba(91,33,182,.06);
+  background: rgba(91, 33, 182, 0.06);
   cursor: move;
   font-size: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: box-shadow .1s;
   user-select: none;
   min-width: 30px;
   min-height: 20px;
+  transition: box-shadow 0.1s, border-color 0.1s;
 }
-.placed-field:hover { box-shadow: 0 0 0 2px rgba(91,33,182,.2); }
-.placed-field.selected { border-width: 3px; box-shadow: 0 0 0 3px rgba(91,33,182,.15); }
+.placed-field:hover {
+  box-shadow: 0 0 0 2px rgba(91, 33, 182, 0.2);
+}
+.placed-field.selected {
+  border-width: 3px;
+  box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.15);
+}
 
+/* Label tag above the field */
 .placed-field .field-label {
   position: absolute;
   top: -18px;
@@ -691,8 +801,10 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   padding: 1px 6px;
   border-radius: 3px 3px 0 0;
   white-space: nowrap;
+  pointer-events: none;
 }
 
+/* Delete button — shown on hover */
 .placed-field .field-delete {
   position: absolute;
   top: -8px;
@@ -709,9 +821,11 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   align-items: center;
   justify-content: center;
   line-height: 1;
+  z-index: 2;
 }
 .placed-field:hover .field-delete { display: flex; }
 
+/* Resize handle — shown when selected */
 .placed-field .resize-handle {
   position: absolute;
   bottom: -4px;
@@ -725,6 +839,7 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 }
 .placed-field.selected .resize-handle { display: block; }
 
+/* Field type variants */
 .placed-field.type-signature,
 .placed-field.type-initials { border-style: dashed; }
 .placed-field.type-text { border-width: 1px; }
@@ -736,7 +851,9 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   border-radius: 3px;
 }
 
-/* ---------- Signing View ---------- */
+/* -----------------------------------------------------------------------
+   16. SIGNING VIEW
+   ----------------------------------------------------------------------- */
 .signing-chrome {
   display: flex;
   flex-direction: column;
@@ -744,6 +861,7 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   background: var(--gray-100);
 }
 
+/* Topbar */
 .signing-topbar {
   display: flex;
   align-items: center;
@@ -766,6 +884,7 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 }
 .signing-topbar .signing-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
+/* Progress bar */
 .signing-progress {
   height: 3px;
   background: var(--gray-200);
@@ -774,9 +893,10 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 .signing-progress .bar {
   height: 100%;
   background: var(--primary);
-  transition: width .3s;
+  transition: width 0.3s ease;
 }
 
+/* Scrollable PDF area */
 .signing-pdf-pages {
   flex: 1;
   overflow-y: auto;
@@ -792,49 +912,56 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   background: #fff;
   box-shadow: var(--shadow-md);
   border-radius: 2px;
+  max-width: 900px;
+  width: 100%;
 }
-.signing-page-wrapper canvas { display: block; }
+.signing-page-wrapper canvas { display: block; width: 100%; height: auto; }
 
-/* -- Signing Fields -- */
+/* -----------------------------------------------------------------------
+   17. SIGNING FIELDS
+   ----------------------------------------------------------------------- */
 .signing-field {
   position: absolute;
   border: 2px solid var(--primary-light);
   border-radius: 4px;
-  background: rgba(124,58,237,.08);
+  background: rgba(124, 58, 237, 0.08);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
   color: var(--primary);
-  transition: all .15s;
   overflow: hidden;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
-.signing-field:hover { background: rgba(124,58,237,.14); }
+.signing-field:hover { background: rgba(124, 58, 237, 0.14); }
 
+/* Unfilled — pulsing animation */
 .signing-field.unfilled {
   animation: fieldPulse 2s ease-in-out infinite;
 }
 @keyframes fieldPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,.3); }
-  50% { box-shadow: 0 0 0 4px rgba(124,58,237,.1); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.3); }
+  50%      { box-shadow: 0 0 0 6px rgba(124, 58, 237, 0.08); }
 }
 
 .signing-field.signature,
-.signing-field.initials {
-  border-style: dashed;
-}
+.signing-field.initials { border-style: dashed; }
+
 .signing-field .placeholder-text {
   font-size: 11px;
   color: var(--primary-light);
   font-weight: 500;
 }
 
+/* Filled / completed — green border */
+.signing-field.filled,
 .signing-field.completed {
   border-style: solid;
   border-color: var(--success);
-  background: rgba(22,163,74,.05);
+  background: rgba(22, 163, 74, 0.05);
   cursor: default;
+  animation: none;
 }
 .signing-field.completed img {
   max-width: 100%;
@@ -846,16 +973,26 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   color: var(--gray-900);
 }
 
-/* ---------- Signature Modal ---------- */
+/* -----------------------------------------------------------------------
+   18. SIGNATURE MODAL
+   ----------------------------------------------------------------------- */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.45);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 200;
+  animation: fadeIn 0.15s ease;
 }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 .modal-content {
   background: #fff;
   border-radius: var(--radius-lg);
@@ -863,8 +1000,14 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   width: 90%;
   max-width: 500px;
   box-shadow: var(--shadow-lg);
+  animation: modalSlideUp 0.2s ease;
+}
+@keyframes modalSlideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 .modal-lg { max-width: 640px; }
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -872,6 +1015,7 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   margin-bottom: 20px;
 }
 .modal-header h3 { font-size: 18px; }
+
 .modal-close {
   background: none;
   border: none;
@@ -879,8 +1023,10 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   cursor: pointer;
   color: var(--gray-500);
   line-height: 1;
+  transition: color 0.15s;
 }
 .modal-close:hover { color: var(--gray-900); }
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -890,6 +1036,7 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   border-top: 1px solid var(--gray-200);
 }
 
+/* Signature tabs */
 .sig-tabs {
   display: flex;
   gap: 4px;
@@ -904,11 +1051,12 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   font-size: 14px;
   font-family: var(--font);
   border-radius: var(--radius);
-  transition: all .15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .sig-tab:hover { border-color: var(--primary); }
 .sig-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
+/* Signature canvas with crosshair */
 #signature-canvas {
   border: 2px dashed var(--gray-300);
   border-radius: var(--radius);
@@ -937,7 +1085,9 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 
 .sig-actions { margin-top: 24px; display: flex; gap: 8px; }
 
-/* ---------- Access Code View ---------- */
+/* -----------------------------------------------------------------------
+   19. ACCESS CODE & SIGNING DONE VIEWS
+   ----------------------------------------------------------------------- */
 .access-code-container {
   max-width: 400px;
   margin: 120px auto;
@@ -949,9 +1099,13 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 }
 .access-code-container h2 { margin-bottom: 8px; }
 .access-code-container p { color: var(--gray-500); margin-bottom: 24px; font-size: 14px; }
-.access-code-container input { margin-bottom: 16px; text-align: center; letter-spacing: 4px; font-size: 20px; }
+.access-code-container input {
+  margin-bottom: 16px;
+  text-align: center;
+  letter-spacing: 4px;
+  font-size: 20px;
+}
 
-/* ---------- Signing Done View ---------- */
 .signing-done {
   max-width: 480px;
   margin: 120px auto;
@@ -977,7 +1131,9 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 .signing-done h2 { font-size: 22px; margin-bottom: 8px; color: var(--gray-900); }
 .signing-done p { color: var(--gray-500); font-size: 15px; }
 
-/* ---------- Admin Panel ---------- */
+/* -----------------------------------------------------------------------
+   20. ADMIN PANEL
+   ----------------------------------------------------------------------- */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -990,13 +1146,15 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   border-radius: var(--radius);
   padding: 16px;
   text-align: center;
+  transition: box-shadow 0.15s;
 }
+.stat-card:hover { box-shadow: var(--shadow); }
 .stat-card .stat-value { font-size: 28px; font-weight: 700; color: var(--primary); }
 .stat-card .stat-label {
   font-size: 12px;
   color: var(--gray-500);
   text-transform: uppercase;
-  letter-spacing: .5px;
+  letter-spacing: 0.5px;
   margin-top: 4px;
 }
 
@@ -1016,7 +1174,7 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   color: var(--gray-500);
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
-  transition: all .15s;
+  transition: color 0.15s, border-color 0.15s;
 }
 .admin-tab:hover { color: var(--gray-700); }
 .admin-tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 500; }
@@ -1038,7 +1196,7 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   color: var(--gray-700);
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: .5px;
+  letter-spacing: 0.5px;
 }
 .admin-table td { padding: 12px 16px; border-top: 1px solid var(--gray-100); }
 .admin-table tr:hover td { background: var(--gray-50); }
@@ -1052,9 +1210,9 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   text-transform: uppercase;
 }
 .role-admin { background: var(--primary-bg); color: var(--primary-light); }
-.role-user { background: var(--gray-100); color: var(--gray-700); }
+.role-user  { background: var(--gray-100); color: var(--gray-700); }
 
-.status-active { color: var(--success); }
+.status-active   { color: var(--success); }
 .status-inactive { color: var(--danger); }
 
 .invite-link-box {
@@ -1067,7 +1225,9 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 }
 .invite-link-box a { color: var(--primary); }
 
-/* ---------- Documents Grid (legacy cards) ---------- */
+/* -----------------------------------------------------------------------
+   21. DOCUMENTS GRID (legacy cards)
+   ----------------------------------------------------------------------- */
 .documents-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -1078,18 +1238,20 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   border: 1px solid var(--gray-200);
   border-radius: var(--radius);
   padding: 20px;
-  transition: box-shadow .15s;
   cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
 }
-.doc-card:hover { box-shadow: var(--shadow); }
+.doc-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .doc-card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
 .doc-card h3 { font-size: 16px; font-weight: 600; word-break: break-word; }
 .doc-card .meta { font-size: 13px; color: var(--gray-500); margin-top: 8px; }
 
 .progress-bar { height: 4px; background: var(--gray-200); border-radius: 2px; margin-top: 12px; overflow: hidden; }
-.progress-bar .fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width .3s; }
+.progress-bar .fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.3s; }
 
-/* ---------- Signing Links ---------- */
+/* -----------------------------------------------------------------------
+   22. SIGNING LINKS & COPY
+   ----------------------------------------------------------------------- */
 .signing-links { margin-top: 16px; }
 .signing-link-item {
   display: flex;
@@ -1113,7 +1275,6 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 }
 .copy-btn:hover { text-decoration: underline; }
 
-/* -- Signer Row (send modal) -- */
 .signer-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
 .signer-row input { flex: 1; }
 .remove-signer {
@@ -1127,7 +1288,9 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   flex-shrink: 0;
 }
 
-/* ---------- Toast Notifications ---------- */
+/* -----------------------------------------------------------------------
+   23. TOAST NOTIFICATIONS
+   ----------------------------------------------------------------------- */
 .toast {
   position: fixed;
   bottom: 24px;
@@ -1139,18 +1302,22 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   font-size: 14px;
   box-shadow: var(--shadow-lg);
   z-index: 300;
-  animation: slideIn .3s ease;
+  max-width: 400px;
+  animation: toastSlideIn 0.3s ease;
 }
-.toast.error { background: var(--danger); }
+.toast.error   { background: var(--danger); }
 .toast.success { background: var(--success); }
 
-@keyframes slideIn {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+@keyframes toastSlideIn {
+  from { transform: translateX(100%) translateY(0); opacity: 0; }
+  to   { transform: translateX(0) translateY(0); opacity: 1; }
 }
 
-/* ---------- Utilities ---------- */
+/* -----------------------------------------------------------------------
+   24. UTILITIES
+   ----------------------------------------------------------------------- */
 .hidden { display: none !important; }
+
 .empty-state {
   grid-column: 1 / -1;
   text-align: center;
@@ -1159,27 +1326,405 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   font-size: 15px;
 }
 .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; color: var(--gray-300); }
+
 .file-name { font-size: 13px; color: var(--gray-700); margin-bottom: 12px; }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 900px) {
-  .field-editor { flex-direction: column; height: auto; }
-  .field-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--gray-200); max-height: 260px; }
-  .pdf-pages { min-height: 400px; }
+/* -- Toast fade out -- */
+.toast.fade-out {
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.3s ease;
 }
 
-@media (max-width: 768px) {
-  .signing-body { grid-template-columns: 1fr; }
+/* -- Loading indicator -- */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+  color: var(--gray-500);
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* -- Drop target highlight on PDF pages -- */
+.pdf-page-wrapper.drop-target {
+  outline: 3px dashed var(--primary);
+  outline-offset: 2px;
+}
+
+/* -- Page label above each PDF page -- */
+.page-label {
+  text-align: center;
+  font-size: 12px;
+  color: var(--gray-500);
+  padding: 8px 0 4px;
+  font-weight: 500;
+}
+
+/* -- Field inner label (shown inside the field) -- */
+.placed-field .field-inner-label {
+  font-size: 10px;
+  color: inherit;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* -- Recipient dot in selector -- */
+.recipient-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* -- Field count badge -- */
+.field-count {
+  margin-left: auto;
+  background: var(--gray-100);
+  color: var(--gray-600);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* -- Button outline-danger variant -- */
+.btn-outline-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: transparent;
+}
+.btn-outline-danger:hover {
+  background: var(--danger-bg);
+}
+
+/* -- Modal backdrop -- */
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+}
+.modal .modal-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* -- Review card -- */
+.review-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.review-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.review-header h4 { font-size: 18px; margin-bottom: 4px; }
+.review-message { color: var(--gray-500); font-size: 14px; margin-top: 4px; }
+.review-section {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.review-section:last-child { border-bottom: none; }
+.review-section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-500);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.review-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 14px;
+}
+.review-signer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+.review-order {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary-bg);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.review-signer-info { font-size: 14px; }
+.review-field-count {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+.review-summary-stats {
+  display: flex;
+  gap: 24px;
+  padding: 16px 24px;
+  background: var(--gray-50);
+}
+.review-stat { font-size: 14px; color: var(--gray-600); }
+
+/* -- Invite success + link box -- */
+.invite-success p { color: var(--success); font-weight: 500; margin-bottom: 12px; }
+.invite-link-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.invite-link-box input {
+  flex: 1;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--gray-700);
+}
+
+/* -- Status dot for admin table -- */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.status-dot.active { background: var(--success); }
+.status-dot.inactive { background: var(--danger); }
+
+/* -- Action buttons group -- */
+.action-btns {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* -- Typed signature display -- */
+.typed-sig {
+  font-family: 'Brush Script MT', 'Segoe Script', cursive;
+  font-size: 18px;
+  color: var(--primary-dark);
+}
+
+/* -- Signing info in topbar -- */
+.signing-info {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+.signing-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.signing-sender {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+/* -- Recipient role badges in wizard -- */
+.recipient-role-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.role-signer { background: var(--primary-bg); color: var(--primary); }
+.role-cc { background: var(--gray-100); color: var(--gray-600); }
+
+/* -- Recipient order badge -- */
+.recipient-order {
+  font-size: 12px;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+/* -- Recipient row improvements -- */
+.recipient-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+.recipient-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.recipient-info { flex: 1; min-width: 0; }
+.recipient-name { font-weight: 600; }
+.recipient-email { font-size: 12px; color: var(--gray-500); }
+
+/* -- Add recipient form -- */
+.add-recipient-form {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.add-recipient-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.add-recipient-row input,
+.add-recipient-row select { flex: 1; }
+
+/* -- Document item in detail view -- */
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 14px;
+}
+.doc-item:last-child { border-bottom: none; }
+
+/* -- Detail message -- */
+.detail-message {
+  color: var(--gray-500);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* -- Done container -- */
+.done-container {
+  max-width: 480px;
+  margin: 120px auto;
+  padding: 48px 40px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+.done-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--success);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 auto 20px;
+}
+.done-container h2 { font-size: 22px; margin-bottom: 8px; }
+.done-container p { color: var(--gray-500); font-size: 15px; }
+
+/* -- Empty state icon -- */
+.empty-state svg {
+  color: var(--gray-300);
+  margin-bottom: 12px;
+}
+
+/* -- Signing field img -- */
+.signing-field img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* -- Checkbox display -- */
+.checkbox-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--success);
+}
+
+/* -- Drop hint text -- */
+.drop-hint {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-top: 4px;
+}
+
+/* -----------------------------------------------------------------------
+   25. RESPONSIVE — 1024px BREAKPOINT
+   ----------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .field-editor { flex-direction: column; height: auto; min-height: 0; }
+  .field-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--gray-200);
+    max-height: 260px;
+  }
+  .field-canvas-area { min-height: 500px; }
+  .pdf-pages { min-height: 400px; }
   .detail-grid { grid-template-columns: 1fr; }
-  .documents-grid { grid-template-columns: 1fr; }
+}
+
+/* -----------------------------------------------------------------------
+   26. RESPONSIVE — 768px BREAKPOINT
+   ----------------------------------------------------------------------- */
+@media (max-width: 768px) {
   .header-inner { gap: 16px; padding: 0 16px; }
+  .container { padding: 16px; }
+
   .wizard-header { gap: 4px; padding: 16px; flex-wrap: wrap; }
   .wizard-step { min-width: 80px; }
   .wizard-step:not(:last-child)::after { display: none; }
+
+  .documents-grid { grid-template-columns: 1fr; }
+
   .envelope-row { flex-wrap: wrap; gap: 8px; }
   .envelope-row .envelope-recipients,
   .envelope-row .envelope-date { width: auto; }
+
   .add-recipient-row { flex-wrap: wrap; }
+
   .signing-topbar { padding: 0 12px; }
-  .container { padding: 16px; }
+  .signing-pdf-pages { padding: 12px; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .modal-content { padding: 20px; width: 95%; }
+
+  .toast { left: 16px; right: 16px; bottom: 16px; max-width: none; }
 }
