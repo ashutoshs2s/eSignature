@@ -10,6 +10,12 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Trust Nginx reverse proxy
+if (isProduction) {
+  app.set('trust proxy', 1);
+}
 
 // Ensure upload directory exists
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
@@ -24,7 +30,11 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'esignature-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 }
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000,
+    secure: isProduction,
+    sameSite: 'lax'
+  }
 }));
 
 // Static files
