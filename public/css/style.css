@@ -334,6 +334,11 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   width: 120px;
   flex-shrink: 0;
 }
+.envelope-row .envelope-meta {
+  font-size: 13px;
+  color: var(--gray-500);
+  flex-shrink: 0;
+}
 .envelope-row .envelope-date {
   font-size: 13px;
   color: var(--gray-500);
@@ -567,6 +572,19 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   border-radius: var(--radius);
   font-size: 14px;
 }
+.doc-list-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.doc-list-name { font-weight: 500; }
+.doc-list-pages { font-size: 12px; color: var(--gray-500); }
+.doc-list-item .remove-doc,
+.doc-list-item .btn {
+  flex-shrink: 0;
+}
 .doc-list-item .remove-doc {
   background: none;
   border: none;
@@ -583,48 +601,6 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   gap: 8px;
   margin-top: 12px;
 }
-.recipient-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius);
-  font-size: 14px;
-}
-.recipient-row .recipient-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.recipient-row .recipient-info { flex: 1; min-width: 0; }
-.recipient-row .recipient-info span {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.recipient-row .recipient-info small { color: var(--gray-500); font-size: 12px; }
-.recipient-row .remove-recipient {
-  background: none;
-  border: none;
-  color: var(--gray-400);
-  cursor: pointer;
-  font-size: 18px;
-  padding: 0 4px;
-}
-.recipient-row .remove-recipient:hover { color: var(--danger); }
-
-.add-recipient-row {
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
-}
-.add-recipient-row input { flex: 1; }
-.add-recipient-row .btn { flex-shrink: 0; align-self: flex-end; }
-
 /* -----------------------------------------------------------------------
    13. FIELD EDITOR (Step 3) — LAYOUT
    ----------------------------------------------------------------------- */
@@ -721,7 +697,13 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   box-shadow: var(--shadow);
 }
 .field-type-btn:active { cursor: grabbing; }
-.field-type-btn .icon { font-size: 14px; flex-shrink: 0; }
+.field-type-btn.selected {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-bg);
+}
+.field-type-btn .icon,
+.field-type-btn .ft-icon { font-size: 14px; flex-shrink: 0; display: flex; align-items: center; }
 
 .field-sidebar-actions {
   margin-top: auto;
@@ -890,7 +872,7 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
   background: var(--gray-200);
   flex-shrink: 0;
 }
-.signing-progress .bar {
+.signing-progress-fill {
   height: 100%;
   background: var(--primary);
   transition: width 0.3s ease;
@@ -1214,16 +1196,6 @@ label { font-size: 14px; font-weight: 500; color: var(--gray-700); display: bloc
 
 .status-active   { color: var(--success); }
 .status-inactive { color: var(--danger); }
-
-.invite-link-box {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius);
-  padding: 12px;
-  word-break: break-all;
-  font-size: 13px;
-}
-.invite-link-box a { color: var(--primary); }
 
 /* -----------------------------------------------------------------------
    21. DOCUMENTS GRID (legacy cards)
