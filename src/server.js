@@ -57,6 +57,12 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
   }
 }));
 
+// Debug: log all API requests
+app.use('/api', (req, res, next) => {
+  console.log(`[API] ${req.method} ${req.originalUrl} Content-Type: ${req.headers['content-type']} Body keys: ${req.body ? Object.keys(req.body).join(',') : 'none'}`);
+  next();
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/envelopes', envelopeRoutes);
