@@ -27,7 +27,7 @@ const signing = {
   signatureMode: 'draw',
 };
 
-const RECIPIENT_COLORS = ['#2563a8','#14967f','#059669','#D97706','#DC2626','#7C3AED','#0891B2','#10B981','#F59E0B','#EF4444'];
+const RECIPIENT_COLORS = ['#5B21B6','#14967f','#059669','#D97706','#DC2626','#7C3AED','#0891B2','#10B981','#F59E0B','#EF4444'];
 const FIELD_LABELS = { signature:'Signature', initials:'Initials', date_signed:'Date Signed', text:'Text', name:'Name', email:'Email', checkbox:'Checkbox' };
 const FIELD_DEFAULTS = {
   signature: { w: 20, h: 5 }, initials: { w: 10, h: 5 }, date_signed: { w: 16, h: 3.5 },
@@ -1174,7 +1174,7 @@ function initSignatureCanvas() {
   newCanvas.width = newCanvas.offsetWidth || 500;
   newCanvas.height = 160;
   canvasCtx.clearRect(0, 0, newCanvas.width, newCanvas.height);
-  canvasCtx.strokeStyle = '#1a4a72';
+  canvasCtx.strokeStyle = '#4A1D96';
   canvasCtx.lineWidth = 2.5;
   canvasCtx.lineCap = 'round';
   canvasCtx.lineJoin = 'round';

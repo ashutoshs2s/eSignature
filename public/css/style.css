@@ -17,10 +17,10 @@
   --surface2:  #eeecea;
   --surface3:  #e3e0db;
   --white:     #ffffff;
-  --accent:    #1a4a72;
-  --accent2:   #2563a8;
-  --accent3:   #3b8fd4;
-  --accent-light: #e8f0fb;
+  --accent:    #4A1D96;
+  --accent2:   #5B21B6;
+  --accent3:   #7C3AED;
+  --accent-light: #F3EEFF;
   --teal:      #0a6b5c;
   --teal2:     #14967f;
   --teal-light: #d4ede8;
@@ -123,11 +123,15 @@ svg { display: inline-block; flex-shrink: 0; }
 
 .logo-mark {
   width: 30px; height: 30px;
-  background: var(--accent2);
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
 }
-.logo-mark svg { width: 16px; height: 16px; }
+
+.logo-img {
+  width: 30px; height: 30px;
+  border-radius: 6px;
+  object-fit: contain;
+}
 
 .logo-text {
   font-family: var(--font-display);
