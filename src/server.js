@@ -47,8 +47,15 @@ app.use(session({
   }
 }));
 
-// Static files
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// Static files - disable caching in development
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+  }
+}));
 
 // Routes
 app.use('/api/auth', authRoutes);
