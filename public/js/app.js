@@ -162,19 +162,32 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
 document.getElementById('login-form').addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target;
-  document.getElementById('login-error').textContent = '';
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  const email = f.email.value.trim();
+  const password = f.password.value;
+  console.log('[LOGIN] Submitting:', email, 'pw length:', password.length);
   try {
-    currentUser = await api('/api/auth/login', {
+    const res = await fetch('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email: f.email.value, password: f.password.value })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
     });
+    const data = await res.json().catch(() => ({}));
+    console.log('[LOGIN] Response status:', res.status, 'data:', JSON.stringify(data));
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Login failed';
+      return;
+    }
+    currentUser = data;
     if (currentUser.must_change_password) {
       showModal('change-pw-modal');
       return;
     }
     showApp();
   } catch (err) {
-    document.getElementById('login-error').textContent = err.message;
+    console.error('[LOGIN] Error:', err);
+    errEl.textContent = 'Network error: ' + err.message;
   }
 });
 
