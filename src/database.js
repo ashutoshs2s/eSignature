@@ -190,12 +190,16 @@ if (!columns.includes('oauth_id')) {
 const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
 if (userCount === 0) {
   const bcrypt = require('bcrypt');
-  const tempPassword = 'ChangeMe123!';
-  const hash = bcrypt.hashSync(tempPassword, 10);
+  const defaultPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+  const hash = bcrypt.hashSync(defaultPassword, 10);
   db.prepare(
     'INSERT INTO users (email, name, password_hash, role, must_change_password) VALUES (?, ?, ?, ?, ?)'
-  ).run('ash@buyerforesight.com', 'Ash', hash, 'admin', 1);
-  console.log('Admin account seeded: ash@buyerforesight.com / ChangeMe123!');
+  ).run(
+    process.env.ADMIN_EMAIL || 'ash@buyerforesight.com',
+    process.env.ADMIN_NAME || 'Ash',
+    hash, 'admin', 0
+  );
+  console.log(`Admin account seeded: ${process.env.ADMIN_EMAIL || 'ash@buyerforesight.com'} / ${defaultPassword}`);
 }
 
 module.exports = db;
