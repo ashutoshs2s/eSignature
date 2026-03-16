@@ -17,9 +17,12 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
-    password_hash TEXT NOT NULL,
+    password_hash TEXT NOT NULL DEFAULT '',
     role TEXT NOT NULL DEFAULT 'user',
     is_active INTEGER NOT NULL DEFAULT 1,
+    must_change_password INTEGER NOT NULL DEFAULT 0,
+    oauth_provider TEXT,
+    oauth_id TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
 
@@ -170,5 +173,29 @@ db.exec(`
     FOREIGN KEY (envelope_id) REFERENCES envelopes(id)
   );
 `);
+
+// Migrations for existing databases
+const columns = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
+if (!columns.includes('must_change_password')) {
+  db.exec("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0");
+}
+if (!columns.includes('oauth_provider')) {
+  db.exec("ALTER TABLE users ADD COLUMN oauth_provider TEXT");
+}
+if (!columns.includes('oauth_id')) {
+  db.exec("ALTER TABLE users ADD COLUMN oauth_id TEXT");
+}
+
+// Seed admin account if no users exist
+const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+if (userCount === 0) {
+  const bcrypt = require('bcrypt');
+  const tempPassword = 'ChangeMe123!';
+  const hash = bcrypt.hashSync(tempPassword, 10);
+  db.prepare(
+    'INSERT INTO users (email, name, password_hash, role, must_change_password) VALUES (?, ?, ?, ?, ?)'
+  ).run('ash@buyerforesight.com', 'Ash', hash, 'admin', 1);
+  console.log('Admin account seeded: ash@buyerforesight.com / ChangeMe123!');
+}
 
 module.exports = db;

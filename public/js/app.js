@@ -85,8 +85,32 @@ function navigate(view) {
 
 // ==================== Auth ====================
 async function checkAuth() {
+  // Check for OAuth errors in URL
+  const urlParams = new URLSearchParams(location.search);
+  const authError = urlParams.get('auth_error');
+  if (authError) {
+    history.replaceState({}, '', '/');
+    const errorMessages = {
+      google_denied: 'Google sign-in was cancelled',
+      google_token_failed: 'Google authentication failed',
+      google_no_email: 'Could not get email from Google',
+      google_failed: 'Google sign-in failed. Please try again.',
+      apple_denied: 'Apple sign-in was cancelled',
+      apple_invalid_token: 'Apple authentication failed',
+      apple_no_email: 'Could not get email from Apple',
+      apple_failed: 'Apple sign-in failed. Please try again.',
+      account_deactivated: 'Your account has been deactivated. Contact your admin.',
+    };
+    setTimeout(() => toast(errorMessages[authError] || 'Authentication failed', 'error'), 100);
+  }
+
   try {
     currentUser = await api('/api/auth/me');
+    if (currentUser.must_change_password) {
+      showView('auth-view');
+      showModal('change-pw-modal');
+      return;
+    }
     showApp();
   } catch {
     await checkSetup();
@@ -102,6 +126,16 @@ async function checkSetup() {
       document.querySelector('#register-form button[type="submit"]').textContent = 'Create Admin Account';
     } else if (!inviteToken) {
       document.getElementById('invite-notice')?.classList.remove('hidden');
+    }
+  } catch {}
+
+  // Check which OAuth providers are available
+  try {
+    const oauth = await api('/api/auth/oauth-config');
+    if (oauth.google || oauth.apple) {
+      document.getElementById('social-login-section')?.classList.remove('hidden');
+      if (!oauth.google) document.getElementById('google-login-btn')?.classList.add('hidden');
+      if (!oauth.apple) document.getElementById('apple-login-btn')?.classList.add('hidden');
     }
   } catch {}
 }
@@ -131,9 +165,43 @@ document.getElementById('login-form').addEventListener('submit', async e => {
       method: 'POST',
       body: JSON.stringify({ email: f.email.value, password: f.password.value })
     });
+    if (currentUser.must_change_password) {
+      showModal('change-pw-modal');
+      return;
+    }
     showApp();
   } catch (err) {
     document.getElementById('login-error').textContent = err.message;
+  }
+});
+
+// Force password change
+document.getElementById('change-pw-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target;
+  const errEl = document.getElementById('change-pw-error');
+  errEl.textContent = '';
+  const newPw = f.new_password.value;
+  const confirmPw = f.confirm_password.value;
+  if (newPw !== confirmPw) {
+    errEl.textContent = 'Passwords do not match';
+    return;
+  }
+  if (newPw.length < 6) {
+    errEl.textContent = 'Password must be at least 6 characters';
+    return;
+  }
+  try {
+    await api('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ new_password: newPw })
+    });
+    hideModal('change-pw-modal');
+    currentUser.must_change_password = false;
+    toast('Password changed successfully!', 'success');
+    showApp();
+  } catch (err) {
+    errEl.textContent = err.message;
   }
 });
 

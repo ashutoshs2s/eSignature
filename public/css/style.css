@@ -365,6 +365,65 @@ textarea { resize: vertical; min-height: 60px; }
   margin-top: 4px;
 }
 
+/* Social login */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 16px;
+  color: var(--gray-400);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gray-200);
+}
+
+.social-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-social {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-300);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-google {
+  background: var(--white);
+  color: var(--gray-700);
+}
+.btn-google:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-400);
+}
+
+.btn-apple {
+  background: var(--gray-900);
+  color: var(--white);
+  border-color: var(--gray-900);
+}
+.btn-apple:hover {
+  background: var(--gray-800);
+  border-color: var(--gray-800);
+}
+
 .invite-only-notice {
   margin-top: 16px;
   padding: 12px 16px;
