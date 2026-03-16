@@ -125,6 +125,9 @@ async function checkSetup() {
       document.querySelector('[data-tab="register"]').textContent = 'Setup';
       document.querySelector('#register-form button[type="submit"]').textContent = 'Create Admin Account';
     } else if (!inviteToken) {
+      // Hide the "Create Account" tab entirely when no invite token and setup is done
+      document.querySelector('[data-tab="register"]')?.classList.add('hidden');
+      document.querySelector('.tab-bar')?.classList.add('hidden');
       document.getElementById('invite-notice')?.classList.remove('hidden');
     }
   } catch {}
