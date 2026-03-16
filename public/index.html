@@ -3,405 +3,421 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BuyerForesight eSign</title>
+  <title>Sign — BuyerForesight eSign</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=3">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css?v=5">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
   <div id="app">
-    <!-- Header -->
-    <header id="header" class="hidden">
-      <div class="header-inner">
-        <div class="logo" onclick="navigate('dashboard')">
-          <svg class="logo-icon" viewBox="0 0 32 32" width="28" height="28">
-            <rect width="32" height="32" rx="8" fill="#4C00C3"/>
-            <path d="M8 10h6l4 6-4 6H8l4-6-4-6z" fill="white"/>
-            <path d="M16 10h6l4 6-4 6h-6l4-6-4-6z" fill="white" opacity="0.6"/>
-          </svg>
-          <span>BuyerForesight <em>eSign</em></span>
+    <!-- ============================================================
+         SIDEBAR (shown when authenticated)
+         ============================================================ -->
+    <aside class="sidebar hidden" id="sidebar">
+      <div class="sidebar-logo" onclick="navigate('dashboard')">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
         </div>
-        <nav>
-          <button class="nav-btn active" data-view="dashboard">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-            Home
-          </button>
-          <button class="nav-btn" data-view="inbox">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M22 12h-6l-2 3H10l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
-            Action Required
-          </button>
-          <button class="nav-btn admin-only hidden" data-view="admin">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-            Admin
-          </button>
-        </nav>
-        <div class="header-right">
-          <button class="btn btn-primary btn-sm" id="new-envelope-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-            New Envelope
-          </button>
-          <span id="user-name"></span>
-          <button id="logout-btn" class="btn btn-sm">Sign Out</button>
-        </div>
+        <span class="logo-text">Sign</span>
       </div>
-    </header>
-
-    <!-- Auth View -->
-    <div id="auth-view" class="view">
-      <div class="auth-container">
-        <div class="auth-logo">
-          <svg viewBox="0 0 32 32" width="52" height="52">
-            <rect width="32" height="32" rx="8" fill="#4C00C3"/>
-            <path d="M8 10h6l4 6-4 6H8l4-6-4-6z" fill="white"/>
-            <path d="M16 10h6l4 6-4 6h-6l4-6-4-6z" fill="white" opacity="0.6"/>
-          </svg>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-view="dashboard" onclick="navigate('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
         </div>
-        <h1>BuyerForesight <em>eSign</em></h1>
-        <p class="subtitle">Secure document signing for your team</p>
-        <div class="tab-bar">
-          <button class="tab active" data-tab="login">Sign In</button>
-          <button class="tab" data-tab="register">Create Account</button>
+        <div class="nav-item" data-view="inbox" onclick="navigate('inbox')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3H10l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+          Action Required
         </div>
-        <form id="login-form" class="auth-form" novalidate>
-          <input type="text" name="email" placeholder="Email address" required>
-          <input type="password" name="password" placeholder="Password" required>
-          <button type="submit" class="btn btn-primary btn-full">Sign In</button>
-          <div class="form-error" id="login-error"></div>
-        </form>
-        <form id="register-form" class="auth-form hidden" novalidate>
-          <input type="text" name="name" placeholder="Full name" required>
-          <input type="text" name="email" placeholder="Email address" required>
-          <input type="password" name="password" placeholder="Password (min 6 characters)" required>
-          <button type="submit" class="btn btn-primary btn-full">Create Account</button>
-          <div class="form-error" id="register-error"></div>
-        </form>
-
-        <!-- Social Login -->
-        <div id="social-login-section" class="hidden">
-          <div class="auth-divider"><span>or continue with</span></div>
-          <div class="social-buttons">
-            <button class="btn btn-social btn-google" id="google-login-btn" onclick="window.location.href='/api/auth/google'">
-              <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-              Google
-            </button>
-            <button class="btn btn-social btn-apple" id="apple-login-btn" onclick="window.location.href='/api/auth/apple'">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
-              Apple
-            </button>
-          </div>
+        <div class="nav-label">Settings</div>
+        <div class="nav-item admin-only hidden" data-view="admin" onclick="navigate('admin')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+          Admin
         </div>
-
-        <div id="invite-notice" class="invite-only-notice hidden">
-          Registration is by invitation only. Contact your admin for access.
-        </div>
-      </div>
-    </div>
-
-    <!-- Dashboard View -->
-    <div id="dashboard-view" class="view hidden">
-      <div class="container">
-        <div class="section-header">
-          <h2>Envelopes</h2>
-          <div class="filter-bar">
-            <button class="filter-btn active" data-filter="all">All</button>
-            <button class="filter-btn" data-filter="draft">Draft</button>
-            <button class="filter-btn" data-filter="sent">Sent</button>
-            <button class="filter-btn" data-filter="completed">Completed</button>
-            <button class="filter-btn" data-filter="declined">Declined</button>
-            <button class="filter-btn" data-filter="voided">Voided</button>
-          </div>
-        </div>
-        <div id="envelopes-list" class="envelope-list">
-          <div class="empty-state">
-            <div class="empty-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-              </svg>
-            </div>
-            <p>No envelopes yet</p>
-            <p class="text-small text-muted mt-1">Click "New Envelope" to get started</p>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-row">
+          <div class="avatar" id="user-avatar">AS</div>
+          <div>
+            <div class="user-name" id="user-name"></div>
+            <div class="user-logout" id="logout-btn">Sign Out</div>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
 
-    <!-- Inbox View -->
-    <div id="inbox-view" class="view hidden">
-      <div class="container">
-        <h2>Action Required</h2>
-        <p class="view-subtitle">Documents waiting for your signature</p>
-        <div id="inbox-list" class="envelope-list"></div>
-      </div>
-    </div>
+    <!-- ============================================================
+         MAIN AREA
+         ============================================================ -->
+    <div class="main-area" id="main-area">
 
-    <!-- Envelope Detail View -->
-    <div id="envelope-detail-view" class="view hidden">
-      <div class="container">
-        <button class="btn btn-sm back-btn" id="back-to-dashboard">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          Back to Envelopes
-        </button>
-        <div id="envelope-detail"></div>
-      </div>
-    </div>
-
-    <!-- Envelope Wizard -->
-    <div id="wizard-view" class="view hidden">
-      <div class="wizard-container">
-        <div class="wizard-header">
-          <button class="btn btn-sm" id="wizard-cancel">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Cancel
-          </button>
-          <div class="wizard-steps">
-            <div class="wizard-step active" data-step="1">
-              <div class="step-circle">1</div>
-              <div class="step-label">Upload</div>
-            </div>
-            <div class="wizard-step" data-step="2">
-              <div class="step-circle">2</div>
-              <div class="step-label">Recipients</div>
-            </div>
-            <div class="wizard-step" data-step="3">
-              <div class="step-circle">3</div>
-              <div class="step-label">Place Fields</div>
-            </div>
-            <div class="wizard-step" data-step="4">
-              <div class="step-circle">4</div>
-              <div class="step-label">Review & Send</div>
-            </div>
-          </div>
-          <div style="width:80px;"></div>
-        </div>
-
-        <!-- Step 1: Upload Documents -->
-        <div class="wizard-panel" id="wizard-step-1">
-          <div class="wizard-form">
-            <h3>Add Documents</h3>
-            <p class="help-text">Upload the PDF documents that need to be signed.</p>
-            <input type="text" id="envelope-title" placeholder="Envelope title (e.g., NDA Agreement)" class="input-lg" style="margin-bottom:12px;">
-            <textarea id="envelope-message" placeholder="Optional message to signers..." rows="2" class="input-lg"></textarea>
-            <div class="file-drop" id="wizard-file-drop">
-              <div class="drop-icon">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-                </svg>
+      <!-- AUTH VIEW -->
+      <div id="auth-view" class="view">
+        <div class="auth-screen">
+          <div class="auth-left">
+            <div class="auth-brand">
+              <div class="auth-brand-logo">
+                <div class="auth-brand-mark">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                </div>
+                <span class="auth-brand-name">Sign</span>
               </div>
-              <p><strong>Drop PDF files here</strong> or click to browse</p>
-              <p class="drop-hint">Supports PDF documents up to 10MB</p>
-              <input type="file" id="wizard-file-input" accept=".pdf" multiple>
-            </div>
-            <div id="wizard-doc-list" class="doc-list"></div>
-            <div class="wizard-actions">
-              <div></div>
-              <button class="btn btn-primary" id="wizard-next-1" disabled>Next: Add Recipients</button>
+              <div class="auth-headline">Documents signed. Deals closed.<br>In minutes, not days.</div>
+              <ul class="auth-features">
+                <li class="auth-feature"><div class="auth-feature-dot"></div>Send for signature in under 60 seconds</li>
+                <li class="auth-feature"><div class="auth-feature-dot"></div>Legally binding in 30+ countries</li>
+                <li class="auth-feature"><div class="auth-feature-dot"></div>Tamper-evident audit trail on every doc</li>
+                <li class="auth-feature"><div class="auth-feature-dot"></div>No account required for signers</li>
+              </ul>
             </div>
           </div>
-        </div>
+          <div class="auth-right">
+            <div class="auth-form-wrap">
+              <h2>Welcome back</h2>
+              <p>Sign in to your account to continue</p>
 
-        <!-- Step 2: Recipients -->
-        <div class="wizard-panel hidden" id="wizard-step-2">
-          <div class="wizard-form">
-            <h3>Add Recipients</h3>
-            <p class="help-text">Recipients will sign in the order listed. Add at least one signer.</p>
-            <div id="recipients-list" class="recipients-list"></div>
-            <div class="add-recipient-form">
-              <div class="add-recipient-row">
-                <input type="text" id="new-recipient-name" placeholder="Full name">
-                <input type="email" id="new-recipient-email" placeholder="Email address">
-              </div>
-              <div class="add-recipient-row">
-                <select id="new-recipient-role" class="select-input">
-                  <option value="signer">Needs to Sign</option>
-                  <option value="cc">Receives a Copy</option>
-                </select>
-                <button class="btn btn-primary btn-sm" id="add-recipient-btn">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                  Add
+              <!-- Social Login -->
+              <div id="social-login-section" class="hidden">
+                <button class="sso-btn" id="google-login-btn" onclick="window.location.href='/api/auth/google'">
+                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  Continue with Google
                 </button>
+                <button class="sso-btn hidden" id="apple-login-btn" onclick="window.location.href='/api/auth/apple'">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+                  Continue with Apple
+                </button>
+                <div class="divider-row">
+                  <div class="divider-line"></div>
+                  <span class="divider-text">or</span>
+                  <div class="divider-line"></div>
+                </div>
               </div>
-            </div>
-            <div class="wizard-actions">
-              <button class="btn" id="wizard-prev-2">Back</button>
-              <button class="btn btn-primary" id="wizard-next-2" disabled>Next: Place Fields</button>
+
+              <div class="tab-bar">
+                <button class="tab active" data-tab="login">Sign In</button>
+                <button class="tab" data-tab="register">Create Account</button>
+              </div>
+              <form id="login-form" class="auth-form" novalidate>
+                <input type="text" name="email" placeholder="Email address" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit" class="btn btn-primary btn-full" style="height:42px;font-size:14px;border-radius:var(--r)">Sign In</button>
+                <div class="form-error" id="login-error"></div>
+              </form>
+              <form id="register-form" class="auth-form hidden" novalidate>
+                <input type="text" name="name" placeholder="Full name" required>
+                <input type="text" name="email" placeholder="Email address" required>
+                <input type="password" name="password" placeholder="Password (min 6 characters)" required>
+                <button type="submit" class="btn btn-primary btn-full" style="height:42px;font-size:14px;border-radius:var(--r)">Create Account</button>
+                <div class="form-error" id="register-error"></div>
+              </form>
+              <div id="invite-notice" class="invite-only-notice hidden">
+                Registration is by invitation only. Contact your admin for access.
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Step 3: Place Fields -->
-        <div class="wizard-panel hidden" id="wizard-step-3">
-          <div class="field-editor">
-            <div class="field-sidebar">
-              <div class="field-sidebar-section">
-                <h4>Recipients</h4>
-                <div id="field-recipient-selector" class="field-recipient-selector"></div>
+      <!-- DASHBOARD VIEW -->
+      <div id="dashboard-view" class="view hidden">
+        <div class="topbar">
+          <span class="topbar-title">Dashboard</span>
+          <div class="topbar-actions">
+            <button class="btn btn-primary" id="new-envelope-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Document
+            </button>
+          </div>
+        </div>
+        <div class="page-content">
+          <div id="dashboard-stats" class="stats-row"></div>
+          <div class="table-card">
+            <div class="table-toolbar">
+              <div class="filter-bar" style="border:none;margin:0">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="draft">Draft</button>
+                <button class="filter-btn" data-filter="sent">Sent</button>
+                <button class="filter-btn" data-filter="completed">Completed</button>
+                <button class="filter-btn" data-filter="declined">Declined</button>
               </div>
-              <div class="field-sidebar-section">
-                <h4>Standard Fields</h4>
-                <div class="field-types">
-                  <button class="field-type-btn" data-type="signature" draggable="true">
-                    <span class="ft-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                    </span>
-                    Signature
-                  </button>
-                  <button class="field-type-btn" data-type="initials" draggable="true">
-                    <span class="ft-icon">AI</span>
-                    Initials
-                  </button>
-                  <button class="field-type-btn" data-type="date_signed" draggable="true">
-                    <span class="ft-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                    </span>
-                    Date Signed
-                  </button>
-                  <button class="field-type-btn" data-type="text" draggable="true">
-                    <span class="ft-icon">T</span>
-                    Text
-                  </button>
-                  <button class="field-type-btn" data-type="name" draggable="true">
-                    <span class="ft-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    </span>
-                    Name
-                  </button>
-                  <button class="field-type-btn" data-type="email" draggable="true">
-                    <span class="ft-icon">@</span>
-                    Email
-                  </button>
-                  <button class="field-type-btn" data-type="checkbox" draggable="true">
-                    <span class="ft-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
-                    </span>
-                    Checkbox
+            </div>
+            <div id="envelopes-list" class="envelope-list" style="padding:0;">
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+                  </svg>
+                </div>
+                <p>No envelopes yet</p>
+                <p class="text-small text-muted mt-1">Click "New Document" to get started</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INBOX VIEW -->
+      <div id="inbox-view" class="view hidden">
+        <div class="topbar">
+          <span class="topbar-title">Action Required</span>
+        </div>
+        <div class="page-content">
+          <p class="view-subtitle" style="margin-top:0">Documents waiting for your signature</p>
+          <div id="inbox-list" class="envelope-list"></div>
+        </div>
+      </div>
+
+      <!-- ENVELOPE DETAIL VIEW -->
+      <div id="envelope-detail-view" class="view hidden">
+        <div class="topbar">
+          <button class="btn btn-ghost" id="back-to-dashboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back
+          </button>
+          <span class="topbar-title" id="detail-topbar-title"></span>
+        </div>
+        <div class="page-content">
+          <div id="envelope-detail"></div>
+        </div>
+      </div>
+
+      <!-- WIZARD VIEW -->
+      <div id="wizard-view" class="view hidden">
+        <div class="wizard-container">
+          <div class="wizard-header">
+            <button class="btn btn-ghost" id="wizard-cancel">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              Cancel
+            </button>
+            <div class="wizard-steps">
+              <div class="wizard-step active" data-step="1">
+                <div class="step-circle">1</div>
+                <div class="step-label">Upload</div>
+              </div>
+              <div class="wizard-step" data-step="2">
+                <div class="step-circle">2</div>
+                <div class="step-label">Recipients</div>
+              </div>
+              <div class="wizard-step" data-step="3">
+                <div class="step-circle">3</div>
+                <div class="step-label">Place Fields</div>
+              </div>
+              <div class="wizard-step" data-step="4">
+                <div class="step-circle">4</div>
+                <div class="step-label">Review & Send</div>
+              </div>
+            </div>
+            <div style="width:80px;"></div>
+          </div>
+
+          <!-- Step 1: Upload Documents -->
+          <div class="wizard-panel" id="wizard-step-1">
+            <div class="wizard-form">
+              <h3>Add Documents</h3>
+              <p class="help-text">Upload the PDF documents that need to be signed.</p>
+              <input type="text" id="envelope-title" placeholder="Envelope title (e.g., NDA Agreement)" class="input-lg" style="margin-bottom:12px;">
+              <textarea id="envelope-message" placeholder="Optional message to signers..." rows="2" class="input-lg"></textarea>
+              <div class="file-drop" id="wizard-file-drop">
+                <div class="drop-icon">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                  </svg>
+                </div>
+                <p><strong>Drop PDF files here</strong> or click to browse</p>
+                <p class="drop-hint">Supports PDF documents up to 10MB</p>
+                <input type="file" id="wizard-file-input" accept=".pdf" multiple>
+              </div>
+              <div id="wizard-doc-list" class="doc-list"></div>
+              <div class="wizard-actions">
+                <div></div>
+                <button class="btn btn-primary" id="wizard-next-1" disabled>Next: Add Recipients</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Recipients -->
+          <div class="wizard-panel hidden" id="wizard-step-2">
+            <div class="wizard-form">
+              <h3>Add Recipients</h3>
+              <p class="help-text">Recipients will sign in the order listed. Add at least one signer.</p>
+              <div id="recipients-list" class="recipients-list"></div>
+              <div class="add-recipient-form">
+                <div class="add-recipient-row">
+                  <input type="text" id="new-recipient-name" placeholder="Full name">
+                  <input type="email" id="new-recipient-email" placeholder="Email address">
+                </div>
+                <div class="add-recipient-row">
+                  <select id="new-recipient-role" class="select-input">
+                    <option value="signer">Needs to Sign</option>
+                    <option value="cc">Receives a Copy</option>
+                  </select>
+                  <button class="btn btn-primary btn-sm" id="add-recipient-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    Add
                   </button>
                 </div>
               </div>
-              <div class="field-sidebar-actions">
-                <button class="btn" id="wizard-prev-3">Back</button>
-                <button class="btn btn-primary" id="wizard-next-3">Next: Review</button>
+              <div class="wizard-actions">
+                <button class="btn btn-secondary" id="wizard-prev-2">Back</button>
+                <button class="btn btn-primary" id="wizard-next-2" disabled>Next: Place Fields</button>
               </div>
             </div>
-            <div class="field-canvas-area">
-              <div id="pdf-pages-container" class="pdf-pages"></div>
+          </div>
+
+          <!-- Step 3: Place Fields -->
+          <div class="wizard-panel hidden" id="wizard-step-3">
+            <div class="field-editor">
+              <div class="field-sidebar">
+                <div class="field-sidebar-section">
+                  <h4>Recipients</h4>
+                  <div id="field-recipient-selector" class="field-recipient-selector"></div>
+                </div>
+                <div class="field-sidebar-section">
+                  <h4>Standard Fields</h4>
+                  <div class="field-types">
+                    <button class="field-type-btn" data-type="signature" draggable="true">
+                      <span class="ft-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span>
+                      Signature
+                    </button>
+                    <button class="field-type-btn" data-type="initials" draggable="true">
+                      <span class="ft-icon">AI</span>
+                      Initials
+                    </button>
+                    <button class="field-type-btn" data-type="date_signed" draggable="true">
+                      <span class="ft-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+                      Date
+                    </button>
+                    <button class="field-type-btn" data-type="text" draggable="true">
+                      <span class="ft-icon">T</span>
+                      Text
+                    </button>
+                    <button class="field-type-btn" data-type="name" draggable="true">
+                      <span class="ft-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                      Name
+                    </button>
+                    <button class="field-type-btn" data-type="email" draggable="true">
+                      <span class="ft-icon">@</span>
+                      Email
+                    </button>
+                    <button class="field-type-btn" data-type="checkbox" draggable="true">
+                      <span class="ft-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg></span>
+                      Checkbox
+                    </button>
+                  </div>
+                </div>
+                <div class="field-sidebar-actions">
+                  <button class="btn btn-secondary" id="wizard-prev-3">Back</button>
+                  <button class="btn btn-primary" id="wizard-next-3">Next: Review</button>
+                </div>
+              </div>
+              <div class="field-canvas-area">
+                <div id="pdf-pages-container" class="pdf-pages"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Review & Send -->
+          <div class="wizard-panel hidden" id="wizard-step-4">
+            <div class="wizard-form">
+              <h3>Review & Send</h3>
+              <p class="help-text">Review your envelope details before sending.</p>
+              <div id="review-summary" class="review-summary"></div>
+              <div class="wizard-actions">
+                <button class="btn btn-secondary" id="wizard-prev-4">Back</button>
+                <button class="btn btn-primary btn-lg" id="wizard-send" style="background:var(--teal)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  Send for Signature
+                </button>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Step 4: Review & Send -->
-        <div class="wizard-panel hidden" id="wizard-step-4">
-          <div class="wizard-form">
-            <h3>Review & Send</h3>
-            <p class="help-text">Review your envelope details before sending.</p>
-            <div id="review-summary" class="review-summary"></div>
-            <div class="wizard-actions">
-              <button class="btn" id="wizard-prev-4">Back</button>
-              <button class="btn btn-primary btn-lg" id="wizard-send">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
-                Send Envelope
-              </button>
+      <!-- SIGNING VIEW -->
+      <div id="signing-view" class="view hidden">
+        <div class="signing-chrome">
+          <div class="signing-topbar">
+            <div class="logo-mark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" style="width:12px;height:12px"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </div>
+            <div id="signing-info" class="signing-info"></div>
+            <div class="signing-topbar-actions">
+              <button class="btn btn-outline-danger btn-sm" id="decline-btn">Decline</button>
+              <button class="btn btn-primary btn-sm" id="finish-signing-btn" disabled>Finish Signing</button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Signing View -->
-    <div id="signing-view" class="view hidden">
-      <div class="signing-chrome">
-        <div class="signing-topbar">
-          <div class="logo">
-            <svg class="logo-icon" viewBox="0 0 32 32" width="24" height="24">
-              <rect width="32" height="32" rx="8" fill="#4C00C3"/>
-              <path d="M8 10h6l4 6-4 6H8l4-6-4-6z" fill="white"/>
-              <path d="M16 10h6l4 6-4 6h-6l4-6-4-6z" fill="white" opacity="0.6"/>
-            </svg>
-            <span>BuyerForesight <em>eSign</em></span>
+          <div class="signing-progress">
+            <div class="signing-progress-fill" id="signing-progress-fill" style="width:0%"></div>
           </div>
-          <div id="signing-info" class="signing-info"></div>
-          <div class="signing-topbar-actions">
-            <button class="btn btn-sm btn-outline-danger" id="decline-btn">Decline</button>
-            <button class="btn btn-primary btn-sm" id="finish-signing-btn" disabled>Finish Signing</button>
+          <div class="signing-body-wrapper">
+            <div id="signing-pdf-container" class="signing-pdf-pages"></div>
           </div>
         </div>
-        <div class="signing-progress">
-          <div class="signing-progress-fill" id="signing-progress-fill" style="width:0%"></div>
-        </div>
-        <div class="signing-body-wrapper">
-          <div id="signing-pdf-container" class="signing-pdf-pages"></div>
+      </div>
+
+      <!-- ACCESS CODE VIEW -->
+      <div id="access-code-view" class="view hidden">
+        <div class="done-container">
+          <div class="auth-brand-mark" style="margin-bottom:24px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:24px;height:24px"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          </div>
+          <h2 style="font-size:20px;margin-bottom:8px;">Enter Access Code</h2>
+          <p class="text-muted" id="access-code-label" style="margin-bottom:20px"></p>
+          <form id="access-code-form" style="max-width:340px;width:100%;">
+            <input type="text" name="code" placeholder="Enter the code provided by the sender" required class="input-lg" style="margin-bottom:12px;">
+            <button type="submit" class="btn btn-primary btn-full" style="height:42px">Verify</button>
+            <div class="form-error" id="access-code-error"></div>
+          </form>
         </div>
       </div>
-    </div>
 
-    <!-- Access Code View -->
-    <div id="access-code-view" class="view hidden">
-      <div class="auth-container">
-        <div class="auth-logo">
-          <svg viewBox="0 0 32 32" width="48" height="48">
-            <rect width="32" height="32" rx="8" fill="#4C00C3"/>
-            <path d="M8 10h6l4 6-4 6H8l4-6-4-6z" fill="white"/>
-            <path d="M16 10h6l4 6-4 6h-6l4-6-4-6z" fill="white" opacity="0.6"/>
-          </svg>
+      <!-- SIGNING DONE VIEW -->
+      <div id="signing-done-view" class="view hidden">
+        <div class="done-container">
+          <div class="done-icon">&#10003;</div>
+          <h2 id="done-title">Document Signed!</h2>
+          <p id="done-message">Thank you. The document owner will be notified.</p>
         </div>
-        <h2 style="text-align:center;font-size:20px;margin-bottom:8px;">Enter Access Code</h2>
-        <p class="subtitle" id="access-code-label"></p>
-        <form id="access-code-form" class="auth-form">
-          <input type="text" name="code" placeholder="Enter the code provided by the sender" required>
-          <button type="submit" class="btn btn-primary btn-full">Verify</button>
-          <div class="form-error" id="access-code-error"></div>
-        </form>
       </div>
-    </div>
 
-    <!-- Signing Done View -->
-    <div id="signing-done-view" class="view hidden">
-      <div class="done-container">
-        <div class="done-icon">&#10003;</div>
-        <h2 id="done-title">Document Signed!</h2>
-        <p id="done-message">Thank you. The document owner will be notified.</p>
-      </div>
-    </div>
-
-    <!-- Admin View -->
-    <div id="admin-view" class="view hidden">
-      <div class="container">
-        <h2>Admin Panel</h2>
-        <div id="admin-stats" class="stats-grid"></div>
-        <div class="admin-tabs">
-          <button class="admin-tab active" data-admin-tab="users">Users</button>
-          <button class="admin-tab" data-admin-tab="invitations">Invitations</button>
-          <button class="admin-tab" data-admin-tab="all-envelopes">All Envelopes</button>
-        </div>
-        <div id="admin-users-tab" class="admin-tab-content">
-          <div class="section-header">
-            <h3 style="font-size:16px;">Users</h3>
+      <!-- ADMIN VIEW -->
+      <div id="admin-view" class="view hidden">
+        <div class="topbar">
+          <span class="topbar-title">Admin Panel</span>
+          <div class="topbar-actions">
             <button class="btn btn-primary btn-sm" id="invite-user-btn">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
               Invite User
             </button>
           </div>
-          <div id="admin-users-list"></div>
         </div>
-        <div id="admin-invitations-tab" class="admin-tab-content hidden">
-          <div class="section-header">
-            <h3 style="font-size:16px;">Invitations</h3>
-            <button class="btn btn-primary btn-sm" id="invite-user-btn-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-              Invite User
-            </button>
+        <div class="page-content">
+          <div id="admin-stats" class="stats-grid"></div>
+          <div class="admin-tabs">
+            <button class="admin-tab active" data-admin-tab="users">Users</button>
+            <button class="admin-tab" data-admin-tab="invitations">Invitations</button>
+            <button class="admin-tab" data-admin-tab="all-envelopes">All Envelopes</button>
           </div>
-          <div id="admin-invitations-list"></div>
-        </div>
-        <div id="admin-all-envelopes-tab" class="admin-tab-content hidden">
-          <h3 style="font-size:16px;margin-bottom:16px;">All Envelopes</h3>
-          <div id="admin-envelopes-list" class="envelope-list"></div>
+          <div id="admin-users-tab" class="admin-tab-content">
+            <div id="admin-users-list"></div>
+          </div>
+          <div id="admin-invitations-tab" class="admin-tab-content hidden">
+            <div id="admin-invitations-list"></div>
+          </div>
+          <div id="admin-all-envelopes-tab" class="admin-tab-content hidden">
+            <div id="admin-envelopes-list" class="envelope-list"></div>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- ============================================================
+         MODALS
+         ============================================================ -->
     <!-- Invite Modal -->
     <div id="invite-modal" class="modal hidden">
       <div class="modal-backdrop"></div>
@@ -412,8 +428,8 @@
         </div>
         <form id="invite-form">
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <input type="text" name="name" placeholder="Full Name" required>
-            <input type="email" name="email" placeholder="Email" required>
+            <input type="text" name="name" placeholder="Full Name" required class="input-lg">
+            <input type="email" name="email" placeholder="Email" required class="input-lg">
             <select name="role" class="select-input"><option value="user">User</option><option value="admin">Admin</option></select>
             <button type="submit" class="btn btn-primary btn-full">Send Invitation</button>
           </div>
@@ -429,8 +445,8 @@
         <div class="modal-header"><h3>Reset Password</h3><button class="modal-close">&times;</button></div>
         <form id="reset-pw-form">
           <input type="hidden" name="user_id" id="reset-pw-user-id">
-          <p id="reset-pw-user-label" style="margin-bottom:12px;color:var(--gray-500);font-size:14px;"></p>
-          <input type="password" name="password" placeholder="New password (min 6 chars)" required minlength="6">
+          <p id="reset-pw-user-label" style="margin-bottom:12px;color:var(--ink3);font-size:14px;"></p>
+          <input type="password" name="password" placeholder="New password (min 6 chars)" required minlength="6" class="input-lg">
           <button type="submit" class="btn btn-primary btn-full" style="margin-top:12px;">Reset Password</button>
         </form>
       </div>
@@ -441,7 +457,7 @@
       <div class="modal-backdrop"></div>
       <div class="modal-content modal-lg">
         <div class="modal-header">
-          <h3 id="sig-modal-title">Add Signature</h3>
+          <h3 id="sig-modal-title">Create your signature</h3>
           <button class="modal-close">&times;</button>
         </div>
         <div class="sig-tabs">
@@ -450,15 +466,18 @@
         </div>
         <div id="sig-draw-panel" class="sig-panel">
           <canvas id="signature-canvas" width="500" height="160"></canvas>
-          <button class="btn btn-sm" id="clear-canvas" style="margin-top:8px;">Clear</button>
+          <button class="btn btn-sm btn-secondary" id="clear-canvas" style="margin-top:8px;">Clear</button>
         </div>
         <div id="sig-type-panel" class="sig-panel hidden">
           <input type="text" id="typed-signature" placeholder="Type your full name" class="input-lg">
           <div id="typed-preview" class="typed-preview"></div>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="hideModal('signature-modal')">Cancel</button>
-          <button class="btn btn-primary" id="apply-signature-btn">Apply Signature</button>
+          <button class="btn btn-secondary" onclick="hideModal('signature-modal')">Cancel</button>
+          <button class="btn btn-primary" id="apply-signature-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>
+            Adopt & Sign
+          </button>
         </div>
       </div>
     </div>
@@ -468,10 +487,10 @@
       <div class="modal-backdrop"></div>
       <div class="modal-content">
         <div class="modal-header"><h3>Decline to Sign</h3><button class="modal-close">&times;</button></div>
-        <p style="margin-bottom:12px;color:var(--gray-500);font-size:14px;">Please provide a reason for declining:</p>
+        <p style="margin-bottom:12px;color:var(--ink3);font-size:14px;">Please provide a reason for declining:</p>
         <textarea id="decline-reason" rows="3" placeholder="Reason for declining..." class="input-lg"></textarea>
         <div class="modal-footer">
-          <button class="btn" onclick="hideModal('decline-modal')">Cancel</button>
+          <button class="btn btn-secondary" onclick="hideModal('decline-modal')">Cancel</button>
           <button class="btn btn-danger" id="confirm-decline-btn">Decline to Sign</button>
         </div>
       </div>
@@ -481,16 +500,14 @@
     <div id="change-pw-modal" class="modal hidden">
       <div class="modal-backdrop"></div>
       <div class="modal-content">
-        <div class="modal-header">
-          <h3>Change Your Password</h3>
-        </div>
-        <p style="margin-bottom:16px;color:var(--gray-600);font-size:14px;line-height:1.5;">
-          You must set a new password before continuing. Please choose a strong password.
+        <div class="modal-header"><h3>Change Your Password</h3></div>
+        <p style="margin-bottom:16px;color:var(--ink3);font-size:14px;line-height:1.5;">
+          You must set a new password before continuing.
         </p>
         <form id="change-pw-form">
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <input type="password" name="new_password" placeholder="New password (min 6 characters)" required minlength="6">
-            <input type="password" name="confirm_password" placeholder="Confirm new password" required minlength="6">
+            <input type="password" name="new_password" placeholder="New password (min 6 characters)" required minlength="6" class="input-lg">
+            <input type="password" name="confirm_password" placeholder="Confirm new password" required minlength="6" class="input-lg">
             <div class="form-error" id="change-pw-error"></div>
             <button type="submit" class="btn btn-primary btn-full">Set New Password</button>
           </div>
@@ -503,16 +520,16 @@
       <div class="modal-backdrop"></div>
       <div class="modal-content">
         <div class="modal-header"><h3>Void Envelope</h3><button class="modal-close">&times;</button></div>
-        <p style="margin-bottom:12px;color:var(--gray-500);font-size:14px;">This will cancel the signing process for all recipients.</p>
+        <p style="margin-bottom:12px;color:var(--ink3);font-size:14px;">This will cancel the signing process for all recipients.</p>
         <textarea id="void-reason" rows="2" placeholder="Reason for voiding..." class="input-lg"></textarea>
         <div class="modal-footer">
-          <button class="btn" onclick="hideModal('void-modal')">Cancel</button>
+          <button class="btn btn-secondary" onclick="hideModal('void-modal')">Cancel</button>
           <button class="btn btn-danger" id="confirm-void-btn">Void Envelope</button>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="/js/app.js?v=3"></script>
+  <script src="/js/app.js?v=5"></script>
 </body>
 </html>

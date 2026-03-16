@@ -27,7 +27,7 @@ const signing = {
   signatureMode: 'draw',
 };
 
-const RECIPIENT_COLORS = ['#4C00C3','#0891B2','#059669','#D97706','#DC2626','#7C3AED','#2563EB','#10B981','#F59E0B','#EF4444'];
+const RECIPIENT_COLORS = ['#2563a8','#14967f','#059669','#D97706','#DC2626','#7C3AED','#0891B2','#10B981','#F59E0B','#EF4444'];
 const FIELD_LABELS = { signature:'Signature', initials:'Initials', date_signed:'Date Signed', text:'Text', name:'Name', email:'Email', checkbox:'Checkbox' };
 const FIELD_DEFAULTS = {
   signature: { w: 20, h: 5 }, initials: { w: 10, h: 5 }, date_signed: { w: 16, h: 3.5 },
@@ -67,6 +67,11 @@ function esc(s) {
   return d.innerHTML;
 }
 
+function getInitials(name) {
+  if (!name) return '?';
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
   document.getElementById(id)?.classList.remove('hidden');
@@ -76,9 +81,9 @@ function showModal(id) { document.getElementById(id)?.classList.remove('hidden')
 function hideModal(id) { document.getElementById(id)?.classList.add('hidden'); }
 
 function navigate(view) {
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.nav-btn[data-view="${view}"]`)?.classList.add('active');
-  if (view === 'dashboard') { showView('dashboard-view'); loadEnvelopes(); }
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.nav-item[data-view="${view}"]`)?.classList.add('active');
+  if (view === 'dashboard') { showView('dashboard-view'); loadEnvelopes(); loadDashboardStats(); }
   else if (view === 'inbox') { showView('inbox-view'); loadInbox(); }
   else if (view === 'admin') { showView('admin-view'); loadAdminPanel(); }
 }
@@ -125,7 +130,6 @@ async function checkSetup() {
       document.querySelector('[data-tab="register"]').textContent = 'Setup';
       document.querySelector('#register-form button[type="submit"]').textContent = 'Create Admin Account';
     } else if (!inviteToken) {
-      // Hide the "Create Account" tab entirely when no invite token and setup is done
       document.querySelector('[data-tab="register"]')?.classList.add('hidden');
       document.querySelector('.tab-bar')?.classList.add('hidden');
       document.getElementById('invite-notice')?.classList.remove('hidden');
@@ -139,20 +143,29 @@ async function checkSetup() {
       document.getElementById('social-login-section')?.classList.remove('hidden');
       if (!oauth.google) document.getElementById('google-login-btn')?.classList.add('hidden');
       if (!oauth.apple) document.getElementById('apple-login-btn')?.classList.add('hidden');
+      else document.getElementById('apple-login-btn')?.classList.remove('hidden');
     }
   } catch {}
 }
 
 function showApp() {
-  document.getElementById('header').classList.remove('hidden');
+  // Show sidebar
+  document.getElementById('sidebar').classList.remove('hidden');
+  document.getElementById('main-area').style.marginLeft = 'var(--sidebar-w)';
+
+  // Set user info
   document.getElementById('user-name').textContent = currentUser.name;
+  document.getElementById('user-avatar').textContent = getInitials(currentUser.name);
+
+  // Show admin nav if admin
   document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', currentUser.role !== 'admin'));
+
   navigate('dashboard');
 }
 
 // Auth tabs
-document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
-  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+document.querySelectorAll('.tab-bar .tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab-bar .tab').forEach(x => x.classList.remove('active'));
   t.classList.add('active');
   document.getElementById('login-form').classList.toggle('hidden', t.dataset.tab !== 'login');
   document.getElementById('register-form').classList.toggle('hidden', t.dataset.tab !== 'register');
@@ -186,26 +199,15 @@ document.getElementById('change-pw-form').addEventListener('submit', async e => 
   errEl.textContent = '';
   const newPw = f.new_password.value;
   const confirmPw = f.confirm_password.value;
-  if (newPw !== confirmPw) {
-    errEl.textContent = 'Passwords do not match';
-    return;
-  }
-  if (newPw.length < 6) {
-    errEl.textContent = 'Password must be at least 6 characters';
-    return;
-  }
+  if (newPw !== confirmPw) { errEl.textContent = 'Passwords do not match'; return; }
+  if (newPw.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; return; }
   try {
-    await api('/api/auth/change-password', {
-      method: 'POST',
-      body: JSON.stringify({ new_password: newPw })
-    });
+    await api('/api/auth/change-password', { method: 'POST', body: JSON.stringify({ new_password: newPw }) });
     hideModal('change-pw-modal');
     currentUser.must_change_password = false;
     toast('Password changed successfully!', 'success');
     showApp();
-  } catch (err) {
-    errEl.textContent = err.message;
-  }
+  } catch (err) { errEl.textContent = err.message; }
 });
 
 // Register
@@ -227,13 +229,31 @@ document.getElementById('register-form').addEventListener('submit', async e => {
 document.getElementById('logout-btn').addEventListener('click', async () => {
   await api('/api/auth/logout', { method: 'POST' });
   currentUser = null;
-  document.getElementById('header').classList.add('hidden');
+  document.getElementById('sidebar').classList.add('hidden');
+  document.getElementById('main-area').style.marginLeft = '0';
   showView('auth-view');
 });
 
-// Nav
-document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => navigate(b.dataset.view)));
+// New envelope button
 document.getElementById('new-envelope-btn').addEventListener('click', startWizard);
+
+// ==================== Dashboard Stats ====================
+async function loadDashboardStats() {
+  try {
+    const envs = await api('/api/envelopes');
+    const sent = envs.filter(e => e.status === 'sent').length;
+    const completed = envs.filter(e => e.status === 'completed').length;
+    const draft = envs.filter(e => e.status === 'draft').length;
+    const total = envs.length;
+
+    document.getElementById('dashboard-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Documents</div><div class="stat-value">${total}</div></div>
+      <div class="stat-card"><div class="stat-label">Awaiting Signature</div><div class="stat-value">${sent}</div></div>
+      <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value">${completed}</div></div>
+      <div class="stat-card"><div class="stat-label">Drafts</div><div class="stat-value">${draft}</div></div>
+    `;
+  } catch {}
+}
 
 // ==================== Dashboard ====================
 async function loadEnvelopes(filter = 'all') {
@@ -251,14 +271,14 @@ async function loadEnvelopes(filter = 'all') {
             </svg>
           </div>
           <p>No envelopes found</p>
-          <p class="text-small text-muted mt-1">Click "New Envelope" to create one</p>
+          <p class="text-small text-muted mt-1">Click "New Document" to create one</p>
         </div>`;
       return;
     }
     el.innerHTML = envs.map(e => `
       <div class="envelope-row" onclick="viewEnvelope('${e.id}')">
         <div class="envelope-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2" style="flex-shrink:0;margin-right:8px;vertical-align:middle;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink4)" stroke-width="2" style="flex-shrink:0;margin-right:8px">
             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
           </svg>
           ${esc(e.title)}
@@ -301,7 +321,7 @@ async function loadInbox() {
       <div class="envelope-row ${i.my_status === 'sent' || i.my_status === 'delivered' ? 'clickable' : ''}"
            onclick="${i.my_status === 'sent' || i.my_status === 'delivered' ? `openSigning('${i.token}')` : ''}">
         <div class="envelope-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--signing-yellow-dark)" stroke-width="2" style="flex-shrink:0;margin-right:8px;vertical-align:middle;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="flex-shrink:0;margin-right:8px">
             <path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/>
           </svg>
           ${esc(i.title)}
@@ -320,15 +340,8 @@ async function viewEnvelope(id) {
   try {
     const env = await api(`/api/envelopes/${id}`);
     showView('envelope-detail-view');
+    document.getElementById('detail-topbar-title').innerHTML = `${esc(env.title)} <span class="status-badge status-${env.status}" style="margin-left:8px">${env.status}</span>`;
     const el = document.getElementById('envelope-detail');
-
-    const statusIcon = {
-      draft: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
-      sent: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>',
-      completed: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>',
-      declined: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>',
-      voided: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>',
-    };
 
     el.innerHTML = `
       <div class="detail-header">
@@ -336,68 +349,63 @@ async function viewEnvelope(id) {
           <h2>${esc(env.title)}</h2>
           <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
             <span class="status-badge status-${env.status}">${env.status}</span>
-            <span style="font-size:13px;color:var(--gray-500);">Created ${fmtDateShort(env.created_at)}</span>
+            <span style="font-size:13px;color:var(--ink3);">Created ${fmtDateShort(env.created_at)}</span>
           </div>
           ${env.message ? `<p class="detail-message">${esc(env.message)}</p>` : ''}
         </div>
         <div class="detail-actions">
           ${env.status === 'sent' ? `<button class="btn btn-outline-danger btn-sm" onclick="openVoidModal('${env.id}')">Void</button>` : ''}
           ${env.status === 'completed' ? `
-            <button class="btn btn-sm" onclick="downloadEnvelope('${env.id}')">
+            <button class="btn btn-secondary btn-sm" onclick="downloadEnvelope('${env.id}')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
               Download
             </button>
-            <button class="btn btn-sm" onclick="downloadCertificate('${env.id}')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg>
-              Certificate
-            </button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadCertificate('${env.id}')">Certificate</button>
           ` : ''}
           ${env.status === 'draft' ? `<button class="btn btn-primary btn-sm" onclick="resumeWizard('${env.id}')">Edit & Send</button>` : ''}
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteEnvelope('${env.id}')">Delete</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="deleteEnvelope('${env.id}')">Delete</button>
         </div>
       </div>
       <div class="detail-grid">
         <div class="detail-section">
           <h3>Recipients</h3>
-          <div class="recipient-list-detail">
           ${env.recipients.map((r, i) => `
             <div class="signer-item">
               <div class="signer-info">
                 <span class="signer-color-dot" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
                 <div style="flex:1;min-width:0;">
                   <div style="font-weight:600;font-size:14px;">${esc(r.name)}</div>
-                  <div style="font-size:12px;color:var(--gray-500);margin-top:1px;">${esc(r.email)}</div>
+                  <div style="font-size:12px;color:var(--ink3);margin-top:1px;">${esc(r.email)}</div>
                   <div style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                     <span class="status-badge status-${r.status}">${r.status}</span>
-                    ${r.role === 'cc' ? '<span class="status-badge" style="background:var(--gray-100);color:var(--gray-500)">CC</span>' : ''}
-                    ${r.signed_at ? `<span style="font-size:11px;color:var(--gray-400);">Signed ${fmtDateShort(r.signed_at)}</span>` : ''}
-                    ${r.decline_reason ? `<span style="font-size:11px;color:var(--danger);">Reason: ${esc(r.decline_reason)}</span>` : ''}
+                    ${r.role === 'cc' ? '<span class="status-badge" style="background:var(--surface2);color:var(--ink3)">CC</span>' : ''}
+                    ${r.signed_at ? `<span style="font-size:11px;color:var(--ink4);">Signed ${fmtDateShort(r.signed_at)}</span>` : ''}
+                    ${r.decline_reason ? `<span style="font-size:11px;color:var(--rose);">Reason: ${esc(r.decline_reason)}</span>` : ''}
                   </div>
                 </div>
               </div>
               ${env.status === 'sent' && (r.status === 'sent' || r.status === 'delivered') ? `
                 <div style="display:flex;gap:6px;flex-shrink:0;">
-                  <button class="btn btn-sm" onclick="copyToClipboard('${location.origin}/sign/${r.token}')">Copy Link</button>
-                  <button class="btn btn-sm" onclick="resendReminder('${env.id}','${r.id}')">Resend</button>
+                  <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('${location.origin}/sign/${r.token}')">Copy Link</button>
+                  <button class="btn btn-sm btn-secondary" onclick="resendReminder('${env.id}','${r.id}')">Resend</button>
                 </div>
               ` : ''}
             </div>
           `).join('')}
-          </div>
         </div>
         <div class="detail-section">
           <h3>Documents</h3>
           ${env.documents.map(d => `
             <div class="doc-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
               <span style="font-weight:500;">${esc(d.title)}</span>
-              <span style="color:var(--gray-400);font-size:12px;">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</span>
+              <span style="color:var(--ink4);font-size:12px;">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</span>
             </div>
           `).join('')}
         </div>
         <div class="detail-section detail-full">
           <h3>Activity</h3>
-          ${env.auditLog.length === 0 ? '<p style="color:var(--gray-500);font-size:13px;">No activity yet.</p>' : env.auditLog.map(a => `
+          ${env.auditLog.length === 0 ? '<p style="color:var(--ink3);font-size:13px;">No activity yet.</p>' : env.auditLog.map(a => `
             <div class="audit-item">
               <span class="audit-action">${esc(a.action.replace(/_/g, ' '))}</span>
               <span class="audit-actor">${esc(a.actor)}</span>
@@ -561,7 +569,7 @@ function renderWizardDocs() {
   document.getElementById('wizard-doc-list').innerHTML = wizard.documents.map((d, i) => `
     <div class="doc-list-item">
       <div class="doc-list-info">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
         <div>
           <div class="doc-list-name">${esc(d.title || d.filename)}</div>
           <div class="doc-list-pages">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</div>
@@ -922,9 +930,9 @@ function renderReview() {
         <div class="review-section-title">Documents (${wizard.documents.length})</div>
         ${wizard.documents.map(d => `
           <div class="review-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
             <span style="font-weight:500;">${esc(d.title || d.filename)}</span>
-            <span style="color:var(--gray-400);font-size:12px;">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</span>
+            <span style="color:var(--ink4);font-size:12px;">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</span>
           </div>
         `).join('')}
       </div>
@@ -971,6 +979,10 @@ document.getElementById('wizard-cancel').addEventListener('click', () => {
 // ==================== Signing View ====================
 async function openSigning(token) {
   signing.token = token;
+  // Hide sidebar for signing view
+  document.getElementById('sidebar').classList.add('hidden');
+  document.getElementById('main-area').style.marginLeft = '0';
+
   try {
     const data = await api(`/api/sign/${token}`);
 
@@ -995,7 +1007,7 @@ async function openSigning(token) {
     document.getElementById('done-title').textContent = 'Cannot Sign';
     document.getElementById('done-message').textContent = err.message;
     document.querySelector('.done-icon').textContent = '!';
-    document.querySelector('.done-icon').style.background = '#dc2626';
+    document.querySelector('.done-icon').style.background = '#8b2e2e';
     document.querySelector('.done-icon').style.color = '#fff';
   }
 }
@@ -1108,7 +1120,7 @@ function getFieldDisplay(f) {
 function handleSigningFieldClick(field, el) {
   if (field.type === 'signature' || field.type === 'initials') {
     signing.currentFieldId = field.id;
-    document.getElementById('sig-modal-title').textContent = field.type === 'signature' ? 'Add Signature' : 'Add Initials';
+    document.getElementById('sig-modal-title').textContent = field.type === 'signature' ? 'Create your signature' : 'Add Initials';
     initSignatureCanvas();
     showModal('signature-modal');
   } else if (field.type === 'date_signed') {
@@ -1162,7 +1174,7 @@ function initSignatureCanvas() {
   newCanvas.width = newCanvas.offsetWidth || 500;
   newCanvas.height = 160;
   canvasCtx.clearRect(0, 0, newCanvas.width, newCanvas.height);
-  canvasCtx.strokeStyle = '#4C00C3';
+  canvasCtx.strokeStyle = '#1a4a72';
   canvasCtx.lineWidth = 2.5;
   canvasCtx.lineCap = 'round';
   canvasCtx.lineJoin = 'round';
@@ -1273,7 +1285,7 @@ document.getElementById('finish-signing-btn').addEventListener('click', async ()
     document.getElementById('done-title').textContent = 'Document Signed!';
     document.getElementById('done-message').textContent = 'Thank you. The document owner will be notified.';
     document.querySelector('.done-icon').textContent = '\u2713';
-    document.querySelector('.done-icon').style.background = '#008A00';
+    document.querySelector('.done-icon').style.background = '#0a6b5c';
     document.querySelector('.done-icon').style.color = '#fff';
   } catch (err) { toast(err.message, 'error'); }
 });
@@ -1294,7 +1306,7 @@ document.getElementById('confirm-decline-btn').addEventListener('click', async (
     document.getElementById('done-title').textContent = 'Signing Declined';
     document.getElementById('done-message').textContent = 'The document owner has been notified.';
     document.querySelector('.done-icon').textContent = '\u2717';
-    document.querySelector('.done-icon').style.background = '#D32F2F';
+    document.querySelector('.done-icon').style.background = '#8b2e2e';
     document.querySelector('.done-icon').style.color = '#fff';
   } catch (err) { toast(err.message, 'error'); }
 });
@@ -1311,12 +1323,12 @@ async function loadAdminStats() {
   try {
     const s = await api('/api/admin/stats');
     document.getElementById('admin-stats').innerHTML = `
-      <div class="stat-card"><div class="stat-value">${s.users}</div><div class="stat-label">Total Users</div></div>
-      <div class="stat-card"><div class="stat-value">${s.activeUsers}</div><div class="stat-label">Active Users</div></div>
-      <div class="stat-card"><div class="stat-value">${s.envelopes}</div><div class="stat-label">Envelopes</div></div>
-      <div class="stat-card"><div class="stat-value">${s.sentEnvelopes}</div><div class="stat-label">In Progress</div></div>
-      <div class="stat-card"><div class="stat-value">${s.completedEnvelopes}</div><div class="stat-label">Completed</div></div>
-      <div class="stat-card"><div class="stat-value">${s.pendingInvitations}</div><div class="stat-label">Pending Invites</div></div>
+      <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value">${s.users}</div></div>
+      <div class="stat-card"><div class="stat-label">Active Users</div><div class="stat-value">${s.activeUsers}</div></div>
+      <div class="stat-card"><div class="stat-label">Envelopes</div><div class="stat-value">${s.envelopes}</div></div>
+      <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value">${s.sentEnvelopes}</div></div>
+      <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value">${s.completedEnvelopes}</div></div>
+      <div class="stat-card"><div class="stat-label">Pending Invites</div><div class="stat-value">${s.pendingInvitations}</div></div>
     `;
   } catch {}
 }
@@ -1334,11 +1346,11 @@ async function loadAdminUsers() {
         <td>${u.envelope_count}</td>
         <td>${u.id !== currentUser.id ? `
           <div class="action-btns">
-            <button class="btn btn-sm" onclick="toggleUserRole(${u.id},'${u.role}')">Make ${u.role === 'admin' ? 'User' : 'Admin'}</button>
-            <button class="btn btn-sm" onclick="toggleUserStatus(${u.id},${u.is_active})">${u.is_active ? 'Deactivate' : 'Activate'}</button>
-            <button class="btn btn-sm" onclick="openResetPw(${u.id},'${esc(u.name)}')">Reset PW</button>
+            <button class="btn btn-sm btn-secondary" onclick="toggleUserRole(${u.id},'${u.role}')">Make ${u.role === 'admin' ? 'User' : 'Admin'}</button>
+            <button class="btn btn-sm btn-secondary" onclick="toggleUserStatus(${u.id},${u.is_active})">${u.is_active ? 'Deactivate' : 'Activate'}</button>
+            <button class="btn btn-sm btn-secondary" onclick="openResetPw(${u.id},'${esc(u.name)}')">Reset PW</button>
           </div>
-        ` : '<span style="color:var(--gray-400);font-size:12px;">You</span>'}</td>
+        ` : '<span style="color:var(--ink4);font-size:12px;">You</span>'}</td>
       </tr>`).join('')}</tbody></table>`;
   } catch {}
 }
@@ -1365,7 +1377,7 @@ async function loadAdminInvitations() {
             <td><span class="role-badge role-${i.role || 'user'}">${i.role || 'user'}</span></td>
             <td><span class="status-badge ${stClass}">${st}</span></td>
             <td>${!i.accepted && !expired ? `
-              <button class="btn btn-sm" onclick="copyToClipboard('${location.origin}/invite/${i.token}')">Copy Link</button>
+              <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('${location.origin}/invite/${i.token}')">Copy Link</button>
               <button class="btn btn-sm btn-outline-danger" onclick="revokeInvite('${i.id}')">Revoke</button>
             ` : ''}</td>
           </tr>`;
@@ -1423,12 +1435,10 @@ document.querySelectorAll('.admin-tab').forEach(t => t.addEventListener('click',
 }));
 
 // Invite modal
-['invite-user-btn', 'invite-user-btn-2'].forEach(id => {
-  document.getElementById(id)?.addEventListener('click', () => {
-    document.getElementById('invite-result').classList.add('hidden');
-    document.getElementById('invite-form').reset();
-    showModal('invite-modal');
-  });
+document.getElementById('invite-user-btn')?.addEventListener('click', () => {
+  document.getElementById('invite-result').classList.add('hidden');
+  document.getElementById('invite-form').reset();
+  showModal('invite-modal');
 });
 
 document.getElementById('invite-form').addEventListener('submit', async e => {
@@ -1488,10 +1498,13 @@ async function handleInvite(token) {
     const inv = await api(`/api/auth/invite/${token}`);
     inviteToken = token;
     showView('auth-view');
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-bar .tab').forEach(t => t.classList.remove('active'));
     document.querySelector('[data-tab="register"]').classList.add('active');
+    document.querySelector('[data-tab="register"]').classList.remove('hidden');
+    document.querySelector('.tab-bar').classList.remove('hidden');
     document.getElementById('login-form').classList.add('hidden');
     document.getElementById('register-form').classList.remove('hidden');
+    document.getElementById('invite-notice')?.classList.add('hidden');
     const form = document.getElementById('register-form');
     form.name.value = inv.name;
     form.email.value = inv.email;
