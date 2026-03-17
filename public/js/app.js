@@ -1410,7 +1410,7 @@ function updateSigningProgress() {
 }
 
 function scrollToSigningField(fieldId) {
-  const el = document.querySelector(\`.signing-field[data-field-id="\${fieldId}"]\`);
+  const el = document.querySelector(`.signing-field[data-field-id="${fieldId}"]`);
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
