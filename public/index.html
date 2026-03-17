@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Dancing+Script:wght@500;700&family=Great+Vibes&family=Alex+Brush&family=Sacramento&family=Pacifico&family=Caveat:wght@500;700&family=Satisfy&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=7">
+  <link rel="stylesheet" href="/css/style.css?v=8">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
@@ -118,37 +118,59 @@
 
       <!-- DASHBOARD VIEW -->
       <div id="dashboard-view" class="view hidden">
-        <div class="topbar">
-          <span class="topbar-title">Dashboard</span>
-          <div class="topbar-actions">
-            <button class="btn btn-primary" id="new-envelope-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <!-- Hero Banner -->
+        <div class="dash-hero">
+          <h1 class="dash-hero-title" id="dash-welcome">Welcome back</h1>
+          <div class="dash-hero-actions">
+            <button class="dash-action-btn" id="new-envelope-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               New Document
+            </button>
+            <button class="dash-action-btn" onclick="navigate('inbox')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Sign a Document
             </button>
           </div>
         </div>
+
         <div class="page-content">
-          <div id="dashboard-stats" class="stats-row"></div>
-          <div class="table-card">
-            <div class="table-toolbar">
-              <div class="filter-bar" style="border:none;margin:0">
-                <button class="filter-btn active" data-filter="all">All</button>
-                <button class="filter-btn" data-filter="draft">Draft</button>
-                <button class="filter-btn" data-filter="sent">Sent</button>
-                <button class="filter-btn" data-filter="completed">Completed</button>
-                <button class="filter-btn" data-filter="declined">Declined</button>
+          <!-- Tasks + Overview row -->
+          <div class="dash-grid">
+            <div class="dash-main-col">
+              <!-- Recent Activity / Agreement Activity -->
+              <div class="dash-card">
+                <div class="dash-card-header">
+                  <h2 class="dash-card-title">AGREEMENT ACTIVITY</h2>
+                  <div class="dash-card-actions">
+                    <div class="filter-bar" style="border:none;margin:0">
+                      <button class="filter-btn active" data-filter="all">All</button>
+                      <button class="filter-btn" data-filter="draft">Draft</button>
+                      <button class="filter-btn" data-filter="sent">Sent</button>
+                      <button class="filter-btn" data-filter="completed">Completed</button>
+                      <button class="filter-btn" data-filter="declined">Declined</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="envelopes-list" class="dash-activity-list">
+                  <div class="empty-state">
+                    <div class="empty-icon">
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+                      </svg>
+                    </div>
+                    <p>No agreements yet</p>
+                    <p class="text-small text-muted mt-1">Click "New Document" to get started</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div id="envelopes-list" class="envelope-list" style="padding:0;">
-              <div class="empty-state">
-                <div class="empty-icon">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-                  </svg>
-                </div>
-                <p>No envelopes yet</p>
-                <p class="text-small text-muted mt-1">Click "New Document" to get started</p>
+
+            <!-- Overview Sidebar -->
+            <div class="dash-side-col">
+              <div class="dash-card">
+                <h2 class="dash-card-title">OVERVIEW</h2>
+                <div id="dashboard-stats" class="dash-overview-stats"></div>
               </div>
             </div>
           </div>
@@ -523,6 +545,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=7"></script>
+  <script src="/js/app.js?v=8"></script>
 </body>
 </html>

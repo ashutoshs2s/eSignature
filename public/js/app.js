@@ -156,6 +156,7 @@ function showApp() {
   // Set user info
   document.getElementById('user-name').textContent = currentUser.name;
   document.getElementById('user-avatar').textContent = getInitials(currentUser.name);
+  document.getElementById('dash-welcome').textContent = `Welcome back, ${currentUser.name}`;
 
   // Show admin nav if admin
   document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', currentUser.role !== 'admin'));
@@ -244,13 +245,13 @@ async function loadDashboardStats() {
     const sent = envs.filter(e => e.status === 'sent').length;
     const completed = envs.filter(e => e.status === 'completed').length;
     const draft = envs.filter(e => e.status === 'draft').length;
-    const total = envs.length;
+    const declined = envs.filter(e => e.status === 'declined').length;
 
     document.getElementById('dashboard-stats').innerHTML = `
-      <div class="stat-card"><div class="stat-label">Total Documents</div><div class="stat-value">${total}</div></div>
-      <div class="stat-card"><div class="stat-label">Awaiting Signature</div><div class="stat-value">${sent}</div></div>
-      <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value">${completed}</div></div>
-      <div class="stat-card"><div class="stat-label">Drafts</div><div class="stat-value">${draft}</div></div>
+      <div class="dash-stat-row"><span class="dash-stat-label">Waiting for others</span><span class="dash-stat-value">${sent}</span></div>
+      <div class="dash-stat-row"><span class="dash-stat-label">Drafts</span><span class="dash-stat-value">${draft}</span></div>
+      <div class="dash-stat-row"><span class="dash-stat-label">Completed</span><span class="dash-stat-value">${completed}</span></div>
+      <div class="dash-stat-row"><span class="dash-stat-label">Declined</span><span class="dash-stat-value">${declined}</span></div>
     `;
   } catch {}
 }
@@ -263,32 +264,35 @@ async function loadEnvelopes(filter = 'all') {
     const el = document.getElementById('envelopes-list');
     if (envs.length === 0) {
       el.innerHTML = `
-        <div class="empty-state">
+        <div class="empty-state" style="padding:40px 20px">
           <div class="empty-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
               <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
             </svg>
           </div>
-          <p>No envelopes found</p>
-          <p class="text-small text-muted mt-1">Click "New Document" to create one</p>
+          <p>No agreements yet</p>
+          <p class="text-small text-muted mt-1">Click "New Document" to get started</p>
         </div>`;
       return;
     }
-    el.innerHTML = envs.map(e => `
-      <div class="envelope-row" onclick="viewEnvelope('${e.id}')">
-        <div class="envelope-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink4)" stroke-width="2" style="flex-shrink:0;margin-right:8px">
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
-          </svg>
-          ${esc(e.title)}
+    el.innerHTML = envs.map(e => {
+      const statusLabel = e.status.charAt(0).toUpperCase() + e.status.slice(1);
+      const sigInfo = (e.total_signers || 0) > 0 ? `${e.signed_count || 0} of ${e.total_signers} signed` : '';
+      return `
+      <div class="dash-activity-row" onclick="viewEnvelope('${e.id}')">
+        <div class="dash-activity-info">
+          <div class="dash-activity-title">${esc(e.title)}</div>
+          <div class="dash-activity-sub">${sigInfo}</div>
         </div>
-        <div class="envelope-meta">${e.document_count || 0} doc${e.document_count !== 1 ? 's' : ''}</div>
-        <div class="envelope-recipients">${e.signed_count || 0} of ${e.total_signers || 0} signed</div>
-        <div><span class="status-badge status-${e.status}">${e.status}</span></div>
-        <div class="envelope-date">${fmtDateShort(e.updated_at)}</div>
-      </div>
-    `).join('');
+        <div class="dash-activity-status">
+          <span class="status-dot ${e.status}"></span>
+          ${statusLabel}
+        </div>
+        <div class="dash-activity-date">${fmtDateShort(e.updated_at)}</div>
+        <svg class="dash-activity-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </div>`;
+    }).join('');
   } catch (err) { toast(err.message, 'error'); }
 }
 

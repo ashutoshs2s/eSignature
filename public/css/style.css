@@ -352,6 +352,176 @@ svg { display: inline-block; flex-shrink: 0; }
 /* -----------------------------------------------------------------------
    5. STAT CARDS
    ----------------------------------------------------------------------- */
+
+/* Dashboard Hero Banner */
+.dash-hero {
+  background: linear-gradient(135deg, var(--ink) 0%, var(--accent) 100%);
+  padding: 48px 36px 44px;
+  text-align: center;
+}
+.dash-hero-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  color: #fff;
+  margin: 0 0 24px;
+}
+.dash-hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dash-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.dash-action-btn:hover {
+  background: rgba(255,255,255,0.25);
+  border-color: rgba(255,255,255,0.5);
+}
+
+/* Dashboard Grid Layout */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .dash-grid { grid-template-columns: 1fr; }
+}
+
+/* Dashboard Cards */
+.dash-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.dash-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dash-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  margin: 0;
+  padding: 18px 20px 10px;
+}
+.dash-card-header .dash-card-title {
+  padding: 0;
+}
+.dash-card-actions .filter-bar {
+  border-bottom: none;
+  margin: 0;
+}
+.dash-card-actions .filter-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Dashboard Overview Sidebar Stats */
+.dash-overview-stats {
+  padding: 0;
+}
+.dash-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.dash-stat-row:last-child { border-bottom: none; }
+.dash-stat-label { color: var(--ink2); }
+.dash-stat-value {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+/* Dashboard Activity List */
+.dash-activity-list {
+  padding: 0;
+}
+.dash-activity-row {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+  gap: 14px;
+}
+.dash-activity-row:hover { background: var(--surface); }
+.dash-activity-info { flex: 1; min-width: 0; }
+.dash-activity-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-activity-sub {
+  font-size: 12px;
+  color: var(--ink4);
+  margin-top: 2px;
+}
+.dash-activity-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.dash-activity-status .status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-activity-status .status-dot.draft { background: var(--ink4); }
+.dash-activity-status .status-dot.sent { background: #D97706; }
+.dash-activity-status .status-dot.completed { background: var(--teal); }
+.dash-activity-status .status-dot.declined { background: #DC2626; }
+.dash-activity-status .status-dot.voided { background: #6b7c93; }
+.dash-activity-date {
+  font-size: 12px;
+  color: var(--ink4);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 90px;
+  text-align: right;
+}
+.dash-activity-arrow {
+  color: var(--ink4);
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+/* Legacy stat cards (kept for admin) */
 .stats-row, .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
