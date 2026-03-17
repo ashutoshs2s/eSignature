@@ -319,8 +319,8 @@ async function loadEnvelopes(filter = 'all') {
       return;
     }
     el.innerHTML = envs.map(e => {
-      const status = e.status || 'draft';
-      const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+      const status = e.status || e.envelope_status || 'draft';
+      const statusLabel = String(status).charAt(0).toUpperCase() + String(status).slice(1);
       const timeAgo = fmtTimeAgo(e.updated_at);
       return `
       <div class="dash-activity-row" onclick="viewEnvelope('${e.id}')">
@@ -371,7 +371,7 @@ async function loadAgreements(filter) {
     }
     el.innerHTML = envs.map(e => {
       const status = e.status || e.envelope_status || 'draft';
-      const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+      const statusLabel = String(status).charAt(0).toUpperCase() + String(status).slice(1);
       const dateStr = fmtDateShort(e.updated_at || e.created_at);
       const from = e.sender_name ? `From: ${esc(e.sender_name)}` : (e.recipients_text ? `To: ${esc(e.recipients_text)}` : '');
       return `
@@ -1637,7 +1637,7 @@ async function loadAdminEnvelopes() {
           <div class="envelope-title">${esc(e.title)}</div>
           <div class="envelope-meta">${esc(e.owner_name)}</div>
           <div class="envelope-recipients">${e.signed_count || 0} of ${e.total_signers || 0} signed</div>
-          <div><span class="status-badge status-${e.status}">${e.status}</span></div>
+          <div><span class="status-badge status-${e.status || 'draft'}">${e.status || 'draft'}</span></div>
           <div class="envelope-date">${fmtDateShort(e.updated_at)}</div>
         </div>`).join('');
   } catch {}
