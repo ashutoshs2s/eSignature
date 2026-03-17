@@ -7,44 +7,36 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Dancing+Script:wght@500;700&family=Great+Vibes&family=Alex+Brush&family=Sacramento&family=Pacifico&family=Caveat:wght@500;700&family=Satisfy&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=8">
+  <link rel="stylesheet" href="/css/style.css?v=9">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
   <div id="app">
     <!-- ============================================================
-         SIDEBAR (shown when authenticated)
+         TOP NAVIGATION BAR (shown when authenticated)
          ============================================================ -->
-    <aside class="sidebar hidden" id="sidebar">
-      <div class="sidebar-logo" onclick="navigate('dashboard')">
-        <img src="/img/bf-logo.svg" alt="BF" class="logo-img" style="width:30px;height:30px;border-radius:6px;">
-        <span class="logo-text">eSign</span>
+    <header class="topnav hidden" id="topnav">
+      <div class="topnav-left">
+        <div class="topnav-brand" onclick="navigate('dashboard')">
+          <img src="/img/bf-logo.svg" alt="BF" class="topnav-logo-img">
+          <span class="topnav-brand-name">eSign</span>
+        </div>
+        <nav class="topnav-links">
+          <a class="topnav-link active" data-view="dashboard" onclick="navigate('dashboard')">Home</a>
+          <a class="topnav-link" data-view="agreements" onclick="navigate('agreements')">Agreements</a>
+          <a class="topnav-link admin-only hidden" data-view="admin" onclick="navigate('admin')">Admin</a>
+        </nav>
       </div>
-      <nav class="sidebar-nav">
-        <div class="nav-item active" data-view="dashboard" onclick="navigate('dashboard')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          Dashboard
+      <div class="topnav-right">
+        <div class="topnav-avatar" id="topnav-avatar" onclick="document.getElementById('topnav-dropdown').classList.toggle('hidden')">
+          <span id="topnav-initials">AP</span>
         </div>
-        <div class="nav-item" data-view="inbox" onclick="navigate('inbox')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3H10l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
-          Action Required
-        </div>
-        <div class="nav-label">Settings</div>
-        <div class="nav-item admin-only hidden" data-view="admin" onclick="navigate('admin')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-          Admin
-        </div>
-      </nav>
-      <div class="sidebar-footer">
-        <div class="user-row">
-          <div class="avatar" id="user-avatar">AS</div>
-          <div>
-            <div class="user-name" id="user-name"></div>
-            <div class="user-logout" id="logout-btn">Sign Out</div>
-          </div>
+        <div class="topnav-dropdown hidden" id="topnav-dropdown">
+          <div class="topnav-dropdown-name" id="topnav-user-name"></div>
+          <div class="topnav-dropdown-item" id="logout-btn">Sign Out</div>
         </div>
       </div>
-    </aside>
+    </header>
 
     <!-- ============================================================
          MAIN AREA
@@ -122,45 +114,44 @@
         <div class="dash-hero">
           <h1 class="dash-hero-title" id="dash-welcome">Welcome back</h1>
           <div class="dash-hero-actions">
-            <button class="dash-action-btn" id="new-envelope-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              New Document
+            <button class="dash-action-btn dash-action-start" id="new-envelope-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Get Signatures
             </button>
-            <button class="dash-action-btn" onclick="navigate('inbox')">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <button class="dash-action-btn" onclick="navigate('agreements')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
               Sign a Document
             </button>
           </div>
         </div>
 
         <div class="page-content">
-          <!-- Tasks + Overview row -->
           <div class="dash-grid">
+            <!-- Main column: Tasks + Agreement Activity -->
             <div class="dash-main-col">
-              <!-- Recent Activity / Agreement Activity -->
+              <!-- Tasks Card -->
+              <div class="dash-card">
+                <div class="dash-card-header">
+                  <h2 class="dash-card-title">TASKS</h2>
+                  <svg class="dash-card-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+                <div class="dash-card-body" id="dashboard-tasks">
+                  <div class="dash-tasks-empty">
+                    <h3>You don't have any tasks yet</h3>
+                    <p>When you have new tasks assigned to you, they will show up here.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Agreement Activity Card -->
               <div class="dash-card">
                 <div class="dash-card-header">
                   <h2 class="dash-card-title">AGREEMENT ACTIVITY</h2>
-                  <div class="dash-card-actions">
-                    <div class="filter-bar" style="border:none;margin:0">
-                      <button class="filter-btn active" data-filter="all">All</button>
-                      <button class="filter-btn" data-filter="draft">Draft</button>
-                      <button class="filter-btn" data-filter="sent">Sent</button>
-                      <button class="filter-btn" data-filter="completed">Completed</button>
-                      <button class="filter-btn" data-filter="declined">Declined</button>
-                    </div>
-                  </div>
                 </div>
                 <div id="envelopes-list" class="dash-activity-list">
-                  <div class="empty-state">
-                    <div class="empty-icon">
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-                      </svg>
-                    </div>
-                    <p>No agreements yet</p>
-                    <p class="text-small text-muted mt-1">Click "New Document" to get started</p>
+                  <div class="dash-tasks-empty">
+                    <h3>No agreements yet</h3>
+                    <p>Click "Get Signatures" to get started.</p>
                   </div>
                 </div>
               </div>
@@ -177,15 +168,69 @@
         </div>
       </div>
 
-      <!-- INBOX VIEW -->
-      <div id="inbox-view" class="view hidden">
-        <div class="topbar">
-          <span class="topbar-title">Action Required</span>
+      <!-- AGREEMENTS VIEW (replaces old inbox) -->
+      <div id="agreements-view" class="view hidden">
+        <div class="agreements-layout">
+          <!-- Left sidebar -->
+          <aside class="agreements-sidebar">
+            <button class="btn btn-primary agreements-start-btn" id="agreements-new-btn">Start Now</button>
+            <div class="agreements-nav-section">
+              <div class="agreements-nav-label">ENVELOPES</div>
+              <div class="agreements-nav-item active" data-agreement-filter="inbox" onclick="filterAgreements('inbox')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3H10l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+                Inbox
+              </div>
+              <div class="agreements-nav-item" data-agreement-filter="sent" onclick="filterAgreements('sent')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Sent
+              </div>
+              <div class="agreements-nav-item" data-agreement-filter="completed" onclick="filterAgreements('completed')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Completed
+              </div>
+              <div class="agreements-nav-item" data-agreement-filter="action_required" onclick="filterAgreements('action_required')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                Action Required
+              </div>
+            </div>
+          </aside>
+          <!-- Main content -->
+          <div class="agreements-main">
+            <div class="agreements-header">
+              <h1 class="agreements-page-title" id="agreements-page-title">Inbox</h1>
+            </div>
+            <!-- Search & Filters -->
+            <div class="agreements-toolbar">
+              <div class="agreements-search">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" placeholder="Search Inbox and Folders" id="agreements-search-input">
+              </div>
+              <div class="agreements-filters">
+                <button class="agreements-filter-btn" data-filter="status">Status <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                <button class="agreements-filter-btn" data-filter="sender">Sender <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+              </div>
+            </div>
+            <!-- Table -->
+            <div class="agreements-table">
+              <div class="agreements-table-header">
+                <div class="agreements-col-name">NAME</div>
+                <div class="agreements-col-status">STATUS</div>
+                <div class="agreements-col-date">LAST CHANGE</div>
+                <div class="agreements-col-actions"></div>
+              </div>
+              <div id="agreements-list" class="agreements-table-body">
+                <div class="empty-state" style="padding:48px 20px">
+                  <p>No documents found</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="page-content">
-          <p class="view-subtitle" style="margin-top:0">Documents waiting for your signature</p>
-          <div id="inbox-list" class="envelope-list"></div>
-        </div>
+      </div>
+
+      <!-- Hidden inbox list for backward compat -->
+      <div id="inbox-view" class="view hidden" style="display:none">
+        <div id="inbox-list"></div>
       </div>
 
       <!-- ENVELOPE DETAIL VIEW -->
@@ -545,6 +590,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=8"></script>
+  <script src="/js/app.js?v=9"></script>
 </body>
 </html>

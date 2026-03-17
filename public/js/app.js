@@ -81,10 +81,15 @@ function showModal(id) { document.getElementById(id)?.classList.remove('hidden')
 function hideModal(id) { document.getElementById(id)?.classList.add('hidden'); }
 
 function navigate(view) {
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.nav-item[data-view="${view}"]`)?.classList.add('active');
+  // Update top nav active state
+  document.querySelectorAll('.topnav-link').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.topnav-link[data-view="${view}"]`)?.classList.add('active');
+  // Close avatar dropdown
+  document.getElementById('topnav-dropdown')?.classList.add('hidden');
+
   if (view === 'dashboard') { showView('dashboard-view'); loadEnvelopes(); loadDashboardStats(); }
-  else if (view === 'inbox') { showView('inbox-view'); loadInbox(); }
+  else if (view === 'agreements') { showView('agreements-view'); loadAgreements(); }
+  else if (view === 'inbox') { showView('agreements-view'); loadAgreements('action_required'); }
   else if (view === 'admin') { showView('admin-view'); loadAdminPanel(); }
 }
 
@@ -149,13 +154,13 @@ async function checkSetup() {
 }
 
 function showApp() {
-  // Show sidebar
-  document.getElementById('sidebar').classList.remove('hidden');
-  document.getElementById('main-area').style.marginLeft = 'var(--sidebar-w)';
+  // Show top nav
+  document.getElementById('topnav').classList.remove('hidden');
+  document.getElementById('main-area').style.marginLeft = '0';
 
-  // Set user info
-  document.getElementById('user-name').textContent = currentUser.name;
-  document.getElementById('user-avatar').textContent = getInitials(currentUser.name);
+  // Set user info in top nav
+  document.getElementById('topnav-initials').textContent = getInitials(currentUser.name);
+  document.getElementById('topnav-user-name').textContent = currentUser.name;
   document.getElementById('dash-welcome').textContent = `Welcome back, ${currentUser.name}`;
 
   // Show admin nav if admin
@@ -238,6 +243,23 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 // New envelope button
 document.getElementById('new-envelope-btn').addEventListener('click', startWizard);
 
+// Agreements page: Start Now button
+document.getElementById('agreements-new-btn')?.addEventListener('click', startWizard);
+
+// Agreements page: search
+document.getElementById('agreements-search-input')?.addEventListener('input', () => {
+  loadAgreements();
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('topnav-dropdown');
+  const avatar = document.getElementById('topnav-avatar');
+  if (dropdown && !dropdown.contains(e.target) && !avatar?.contains(e.target)) {
+    dropdown.classList.add('hidden');
+  }
+});
+
 // ==================== Dashboard Stats ====================
 async function loadDashboardStats() {
   try {
@@ -256,6 +278,30 @@ async function loadDashboardStats() {
   } catch {}
 }
 
+function fmtTimeAgo(d) {
+  if (!d) return '';
+  const now = new Date();
+  const date = new Date(d + 'Z');
+  const diff = Math.floor((now - date) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff/60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)} hours ago`;
+  if (diff < 604800) return `${Math.floor(diff/86400)} days ago`;
+  if (diff < 2592000) return `${Math.floor(diff/604800)} weeks ago`;
+  return fmtDateShort(d);
+}
+
+function statusIcon(status) {
+  const icons = {
+    completed: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>',
+    sent: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><circle cx="12" cy="12" r="1"/></svg>',
+    draft: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M12 5v14"/></svg>',
+    declined: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+    voided: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+  };
+  return `<span class="dash-status-icon ${status}">${icons[status] || icons.draft}</span>`;
+}
+
 // ==================== Dashboard ====================
 async function loadEnvelopes(filter = 'all') {
   try {
@@ -264,36 +310,91 @@ async function loadEnvelopes(filter = 'all') {
     const el = document.getElementById('envelopes-list');
     if (envs.length === 0) {
       el.innerHTML = `
-        <div class="empty-state" style="padding:40px 20px">
-          <div class="empty-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-            </svg>
-          </div>
-          <p>No agreements yet</p>
-          <p class="text-small text-muted mt-1">Click "New Document" to get started</p>
+        <div class="dash-tasks-empty">
+          <h3>No agreements yet</h3>
+          <p>Click "Get Signatures" to get started.</p>
         </div>`;
       return;
     }
     el.innerHTML = envs.map(e => {
       const statusLabel = e.status.charAt(0).toUpperCase() + e.status.slice(1);
-      const sigInfo = (e.total_signers || 0) > 0 ? `${e.signed_count || 0} of ${e.total_signers} signed` : '';
+      const timeAgo = fmtTimeAgo(e.updated_at);
       return `
       <div class="dash-activity-row" onclick="viewEnvelope('${e.id}')">
         <div class="dash-activity-info">
           <div class="dash-activity-title">${esc(e.title)}</div>
-          <div class="dash-activity-sub">${sigInfo}</div>
+          <div class="dash-activity-sub">${timeAgo}</div>
         </div>
         <div class="dash-activity-status">
-          <span class="status-dot ${e.status}"></span>
+          ${statusIcon(e.status)}
           ${statusLabel}
         </div>
-        <div class="dash-activity-date">${fmtDateShort(e.updated_at)}</div>
-        <svg class="dash-activity-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        <svg class="dash-activity-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
       </div>`;
     }).join('');
   } catch (err) { toast(err.message, 'error'); }
+}
+
+// ==================== Agreements Page ====================
+let currentAgreementFilter = 'inbox';
+
+async function loadAgreements(filter) {
+  if (filter) {
+    currentAgreementFilter = filter;
+    // Update sidebar active state
+    document.querySelectorAll('.agreements-nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelector(`.agreements-nav-item[data-agreement-filter="${filter}"]`)?.classList.add('active');
+  }
+  const titleMap = { inbox: 'Inbox', sent: 'Sent', completed: 'Completed', action_required: 'Action Required' };
+  document.getElementById('agreements-page-title').textContent = titleMap[currentAgreementFilter] || 'Inbox';
+
+  try {
+    let envs;
+    if (currentAgreementFilter === 'inbox' || currentAgreementFilter === 'action_required') {
+      envs = await api('/api/envelopes/inbox');
+    } else {
+      envs = await api(`/api/envelopes?status=${currentAgreementFilter}`);
+    }
+
+    const searchVal = (document.getElementById('agreements-search-input')?.value || '').toLowerCase();
+    if (searchVal) {
+      envs = envs.filter(e => (e.title || '').toLowerCase().includes(searchVal));
+    }
+
+    const el = document.getElementById('agreements-list');
+    if (envs.length === 0) {
+      el.innerHTML = `<div class="empty-state" style="padding:48px 20px"><p>No documents found</p></div>`;
+      return;
+    }
+    el.innerHTML = envs.map(e => {
+      const statusLabel = e.status.charAt(0).toUpperCase() + e.status.slice(1);
+      const dateStr = fmtDateShort(e.updated_at);
+      const from = e.sender_name ? `From: ${esc(e.sender_name)}` : (e.recipients_text ? `To: ${esc(e.recipients_text)}` : '');
+      return `
+      <div class="agreements-row" onclick="viewEnvelope('${e.id}')">
+        <div>
+          <div class="agreements-row-name">${esc(e.title)}</div>
+          <div class="agreements-row-from">${from}</div>
+        </div>
+        <div class="agreements-row-status">
+          ${statusIcon(e.status)}
+          ${statusLabel}
+        </div>
+        <div class="agreements-row-date">${dateStr}</div>
+        <div class="agreements-row-actions">
+          <button class="agreements-download-btn" onclick="event.stopPropagation(); downloadEnvelope('${e.id}')">Download</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function filterAgreements(filter) {
+  loadAgreements(filter);
+}
+
+function downloadEnvelope(id) {
+  window.open(`/api/envelopes/${id}/download`, '_blank');
 }
 
 document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
