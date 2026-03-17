@@ -108,6 +108,7 @@ db.exec(`
     field_id TEXT NOT NULL,
     signature_data TEXT NOT NULL,
     signature_type TEXT NOT NULL DEFAULT 'draw',
+    signature_font TEXT,
     ip_address TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (recipient_id) REFERENCES recipients(id),
@@ -184,6 +185,12 @@ if (!columns.includes('oauth_provider')) {
 }
 if (!columns.includes('oauth_id')) {
   db.exec("ALTER TABLE users ADD COLUMN oauth_id TEXT");
+}
+
+// Migration for signatures table
+const sigColumns = db.prepare("PRAGMA table_info(signatures)").all().map(c => c.name);
+if (!sigColumns.includes('signature_font')) {
+  db.exec("ALTER TABLE signatures ADD COLUMN signature_font TEXT");
 }
 
 // Seed admin account if no users exist

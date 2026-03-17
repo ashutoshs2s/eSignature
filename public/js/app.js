@@ -1170,6 +1170,18 @@ function updateSigningProgress() {
   document.getElementById('finish-signing-btn').disabled = filled.length < required.length;
 }
 
+// Signature fonts
+const SIG_FONTS = [
+  { name: 'Dancing Script', family: "'Dancing Script', cursive" },
+  { name: 'Great Vibes', family: "'Great Vibes', cursive" },
+  { name: 'Alex Brush', family: "'Alex Brush', cursive" },
+  { name: 'Sacramento', family: "'Sacramento', cursive" },
+  { name: 'Pacifico', family: "'Pacifico', cursive" },
+  { name: 'Caveat', family: "'Caveat', cursive" },
+  { name: 'Satisfy', family: "'Satisfy', cursive" },
+];
+let selectedSigFont = SIG_FONTS[0];
+
 // Signature canvas
 let canvasCtx = null, isDrawing = false;
 
@@ -1189,6 +1201,8 @@ function initSignatureCanvas() {
 
   document.getElementById('typed-signature').value = '';
   document.getElementById('typed-preview').textContent = '';
+  document.getElementById('typed-preview').style.fontFamily = selectedSigFont.family;
+  renderFontPicker();
   signing.signatureMode = 'draw';
   document.querySelectorAll('.sig-tab').forEach(t => t.classList.toggle('active', t.dataset.sig === 'draw'));
   document.getElementById('sig-draw-panel').classList.remove('hidden');
@@ -1229,6 +1243,22 @@ function initSignatureCanvas() {
   newCanvas.addEventListener('touchend', () => isDrawing = false);
 }
 
+function renderFontPicker() {
+  const picker = document.getElementById('sig-font-picker');
+  const name = document.getElementById('typed-signature').value || 'Your Name';
+  picker.innerHTML = SIG_FONTS.map((f, i) =>
+    `<div class="sig-font-option${f.name === selectedSigFont.name ? ' active' : ''}" data-font-idx="${i}" style="font-family:${f.family}">${esc(name)}</div>`
+  ).join('');
+  picker.querySelectorAll('.sig-font-option').forEach(el => {
+    el.addEventListener('click', () => {
+      selectedSigFont = SIG_FONTS[parseInt(el.dataset.fontIdx)];
+      document.getElementById('typed-preview').style.fontFamily = selectedSigFont.family;
+      picker.querySelectorAll('.sig-font-option').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+}
+
 document.querySelectorAll('.sig-tab').forEach(t => t.addEventListener('click', () => {
   signing.signatureMode = t.dataset.sig;
   document.querySelectorAll('.sig-tab').forEach(x => x.classList.toggle('active', x.dataset.sig === t.dataset.sig));
@@ -1243,6 +1273,7 @@ document.getElementById('clear-canvas').addEventListener('click', () => {
 
 document.getElementById('typed-signature').addEventListener('input', e => {
   document.getElementById('typed-preview').textContent = e.target.value;
+  renderFontPicker();
 });
 
 document.getElementById('apply-signature-btn').addEventListener('click', async () => {
@@ -1264,12 +1295,13 @@ document.getElementById('apply-signature-btn').addEventListener('click', async (
     sigData = document.getElementById('typed-signature').value.trim();
     if (!sigData) { toast('Please type your name', 'error'); return; }
     sigType = 'type';
+    signing.currentSigFont = selectedSigFont.family;
   }
 
   try {
     await api(`/api/sign/${signing.token}/fields/${fieldId}`, {
       method: 'POST',
-      body: JSON.stringify({ signature_data: sigData, signature_type: sigType })
+      body: JSON.stringify({ signature_data: sigData, signature_type: sigType, signature_font: sigType === 'type' ? selectedSigFont.name : undefined })
     });
     if (field) field.value = sigType === 'type' ? sigData : '[signed]';
     signing.filledFields.add(fieldId);
@@ -1278,7 +1310,7 @@ document.getElementById('apply-signature-btn').addEventListener('click', async (
     if (sigType === 'draw') {
       el.innerHTML = `<img src="${sigData}" alt="Signature">`;
     } else {
-      el.innerHTML = `<span class="field-value typed-sig">${esc(sigData)}</span>`;
+      el.innerHTML = `<span class="field-value typed-sig" style="font-family:${signing.currentSigFont}">${esc(sigData)}</span>`;
     }
     hideModal('signature-modal');
     updateSigningProgress();

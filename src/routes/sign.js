@@ -62,7 +62,7 @@ router.get('/:token', (req, res) => {
   // Get already-filled field values (from other signers) for display
   const otherFields = db.prepare(`
     SELECT f.id, f.type, f.page_number, f.x, f.y, f.width, f.height, f.value, f.document_id,
-           s.signature_data, s.signature_type
+           s.signature_data, s.signature_type, s.signature_font
     FROM fields f
     LEFT JOIN signatures s ON s.field_id = f.id
     JOIN recipients r ON f.recipient_id = r.id
@@ -126,14 +126,14 @@ router.post('/:token/fields/:fieldId', (req, res) => {
 
   if (!field) return res.status(404).json({ error: 'Field not found' });
 
-  const { value, signature_data, signature_type } = req.body;
+  const { value, signature_data, signature_type, signature_font } = req.body;
 
   if (field.type === 'signature' || field.type === 'initials') {
     if (!signature_data) return res.status(400).json({ error: 'Signature data required' });
 
     db.prepare('DELETE FROM signatures WHERE field_id = ? AND recipient_id = ?').run(field.id, recipient.id);
-    db.prepare('INSERT INTO signatures (recipient_id, field_id, signature_data, signature_type, ip_address) VALUES (?, ?, ?, ?, ?)')
-      .run(recipient.id, field.id, signature_data, signature_type || 'draw', req.ip);
+    db.prepare('INSERT INTO signatures (recipient_id, field_id, signature_data, signature_type, signature_font, ip_address) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(recipient.id, field.id, signature_data, signature_type || 'draw', signature_font || null, req.ip);
 
     db.prepare('UPDATE fields SET value = ? WHERE id = ?').run(signature_type === 'type' ? signature_data : '[signed]', field.id);
   } else {

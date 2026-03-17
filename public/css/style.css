@@ -1637,6 +1637,36 @@ textarea.input-lg {
   margin-top: 12px;
 }
 
+/* Signature font picker */
+.sig-font-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.sig-font-option {
+  padding: 8px 16px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--ink2);
+  transition: all 0.15s ease;
+  min-width: 100px;
+  text-align: center;
+  white-space: nowrap;
+}
+.sig-font-option:hover {
+  border-color: var(--accent3);
+  background: var(--accent-light);
+}
+.sig-font-option.active {
+  border-color: var(--accent2);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
 /* Invite modal */
 .invite-success {
   background: var(--teal-light);

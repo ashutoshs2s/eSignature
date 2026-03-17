@@ -513,7 +513,7 @@ router.get('/:id/download', requireAuth, async (req, res) => {
   // For single doc, embed signatures into it
   const doc = docs[0];
   const allFields = db.prepare(`
-    SELECT f.*, s.signature_data, s.signature_type
+    SELECT f.*, s.signature_data, s.signature_type, s.signature_font
     FROM fields f
     LEFT JOIN signatures s ON s.field_id = f.id
     WHERE f.document_id = ?
