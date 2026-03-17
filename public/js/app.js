@@ -545,6 +545,10 @@ document.getElementById('wizard-file-drop').addEventListener('drop', async e => 
 });
 
 async function uploadWizardDoc(file) {
+  const titleInput = document.getElementById('envelope-title');
+  if (!titleInput.value.trim()) {
+    titleInput.value = file.name.replace(/\.pdf$/i, '');
+  }
   await api(`/api/envelopes/${wizard.envelopeId}`, {
     method: 'PUT',
     body: JSON.stringify({
