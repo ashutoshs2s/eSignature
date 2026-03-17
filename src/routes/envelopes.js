@@ -361,6 +361,21 @@ router.post('/:id/recipients', requireAuth, (req, res) => {
 });
 
 // Update recipient
+router.patch('/:id/recipients/:rid', requireAuth, (req, res) => {
+  const envelope = db.prepare("SELECT * FROM envelopes WHERE id = ? AND owner_id = ? AND status = 'draft'")
+    .get(req.params.id, req.session.userId);
+  if (!envelope) return res.status(404).json({ error: 'Envelope not found or not editable' });
+
+  const { name, email, role, order_num, access_code } = req.body;
+  db.prepare(`
+    UPDATE recipients SET name = COALESCE(?, name), email = COALESCE(?, email),
+    role = COALESCE(?, role), order_num = COALESCE(?, order_num), access_code = ?
+    WHERE id = ? AND envelope_id = ?
+  `).run(name, email, role, order_num, access_code || null, req.params.rid, envelope.id);
+
+  res.json({ message: 'Recipient updated' });
+});
+
 router.put('/:id/recipients/:rid', requireAuth, (req, res) => {
   const envelope = db.prepare("SELECT * FROM envelopes WHERE id = ? AND owner_id = ? AND status = 'draft'")
     .get(req.params.id, req.session.userId);

@@ -308,17 +308,15 @@
                 <div class="add-recipient-row">
                   <input type="text" id="new-recipient-name" placeholder="Full name">
                   <input type="email" id="new-recipient-email" placeholder="Email address">
-                </div>
-                <div class="add-recipient-row">
-                  <select id="new-recipient-role" class="select-input">
+                  <select id="new-recipient-role" class="select-input" style="max-width:160px">
                     <option value="signer">Needs to Sign</option>
                     <option value="cc">Receives a Copy</option>
                   </select>
-                  <button class="btn btn-primary btn-sm" id="add-recipient-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                    Add
-                  </button>
                 </div>
+                <button class="btn-ghost-add" id="add-recipient-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  Add
+                </button>
               </div>
               <div class="wizard-actions">
                 <button class="btn btn-secondary" id="wizard-prev-2">Back</button>
@@ -366,11 +364,16 @@
                       <span class="ft-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg></span>
                       Checkbox
                     </button>
+                    <button class="field-type-btn" data-type="dropdown" draggable="true">
+                      <span class="ft-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg></span>
+                      Dropdown
+                    </button>
                   </div>
                 </div>
+                <div class="field-count-summary" id="field-count-summary"><strong>0</strong> fields placed</div>
                 <div class="field-sidebar-actions">
                   <button class="btn btn-secondary" id="wizard-prev-3">Back</button>
-                  <button class="btn btn-primary" id="wizard-next-3">Next: Review</button>
+                  <button class="btn btn-primary" id="wizard-next-3">Next: Review & Send</button>
                 </div>
               </div>
               <div class="field-canvas-area">
@@ -382,14 +385,16 @@
           <!-- Step 4: Review & Send -->
           <div class="wizard-panel hidden" id="wizard-step-4">
             <div style="flex:1;overflow-y:auto;padding:24px">
-              <div id="review-summary" class="review-summary"></div>
-              <div style="display:flex;justify-content:space-between;max-width:1000px;margin:24px auto 0">
-                <button class="btn btn-secondary" id="wizard-prev-4">&#8592; Back</button>
-                <button class="btn btn-primary btn-lg" id="wizard-send" style="background:var(--teal);padding:10px 24px">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  Send for Signature
-                </button>
+              <div style="max-width:1000px;margin:0 auto">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                  <button class="btn btn-secondary" id="wizard-prev-4">&#8592; Back</button>
+                  <button class="btn btn-primary btn-lg" id="wizard-send" style="background:var(--teal);padding:10px 24px">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    Send for Signature
+                  </button>
+                </div>
               </div>
+              <div id="review-summary" class="review-summary"></div>
             </div>
           </div>
         </div>
@@ -403,6 +408,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" style="width:12px;height:12px"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
             </div>
             <div id="signing-info" class="signing-info"></div>
+            <span class="signing-status-pill" id="signing-status-pill">0 of 0 fields</span>
             <div class="signing-topbar-actions">
               <button class="btn btn-outline-danger btn-sm" id="decline-btn">Decline</button>
               <button class="btn btn-primary btn-sm" id="finish-signing-btn" disabled>Finish Signing</button>
@@ -411,8 +417,17 @@
           <div class="signing-progress">
             <div class="signing-progress-fill" id="signing-progress-fill" style="width:0%"></div>
           </div>
-          <div class="signing-body-wrapper">
-            <div id="signing-pdf-container" class="signing-pdf-pages"></div>
+          <div class="signing-layout">
+            <div class="signing-body-wrapper" style="flex:1">
+              <div id="signing-pdf-container" class="signing-pdf-pages"></div>
+            </div>
+            <div class="signing-checklist" id="signing-checklist">
+              <div class="checklist-header">Fields to Complete</div>
+              <div id="signing-checklist-items"></div>
+              <div class="checklist-actions">
+                <button class="btn btn-primary btn-full" id="finish-signing-btn-side" disabled style="background:var(--teal);justify-content:center">Finish Signing</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -439,6 +454,12 @@
           <div class="done-icon">&#10003;</div>
           <h2 id="done-title">Document Signed!</h2>
           <p id="done-message">Thank you. The document owner will be notified.</p>
+          <div class="done-summary" id="done-summary"></div>
+          <button class="btn-download" id="done-download-btn" style="display:none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Signed Copy
+          </button>
+          <p class="done-email-note" id="done-email-note" style="display:none">A copy has been sent to your email address.</p>
         </div>
       </div>
 
@@ -597,11 +618,12 @@
           <div class="sig-font-picker" id="sig-font-picker"></div>
           <div id="typed-preview" class="typed-preview"></div>
         </div>
+        <div class="sig-legal">By clicking "Adopt &amp; Sign", you agree that this electronic signature is the legal equivalent of your manual signature on this document.</div>
         <div class="modal-footer">
           <button class="btn btn-secondary" onclick="hideModal('signature-modal')">Cancel</button>
           <button class="btn btn-primary" id="apply-signature-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>
-            Adopt & Sign
+            Adopt &amp; Sign
           </button>
         </div>
       </div>

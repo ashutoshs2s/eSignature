@@ -28,10 +28,10 @@ const signing = {
 };
 
 const RECIPIENT_COLORS = ['#2563a8','#14967f','#059669','#D97706','#DC2626','#3b8fd4','#0891B2','#10B981','#F59E0B','#EF4444'];
-const FIELD_LABELS = { signature:'Signature', initials:'Initials', date_signed:'Date Signed', text:'Text', name:'Name', email:'Email', checkbox:'Checkbox' };
+const FIELD_LABELS = { signature:'Signature', initials:'Initials', date_signed:'Date Signed', text:'Text', name:'Name', email:'Email', checkbox:'Checkbox', dropdown:'Dropdown' };
 const FIELD_DEFAULTS = {
   signature: { w: 20, h: 5 }, initials: { w: 10, h: 5 }, date_signed: { w: 16, h: 3.5 },
-  text: { w: 20, h: 3.5 }, name: { w: 20, h: 3.5 }, email: { w: 20, h: 3.5 }, checkbox: { w: 3, h: 3 }
+  text: { w: 20, h: 3.5 }, name: { w: 20, h: 3.5 }, email: { w: 20, h: 3.5 }, checkbox: { w: 3, h: 3 }, dropdown: { w: 20, h: 3.5 }
 };
 
 // ==================== Helpers ====================
@@ -735,17 +735,22 @@ async function uploadWizardDoc(file) {
   } catch (err) { toast(err.message, 'error'); }
 }
 
+function fmtFileSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
 function renderWizardDocs() {
   document.getElementById('wizard-doc-list').innerHTML = wizard.documents.map((d, i) => `
-    <div class="doc-list-item">
-      <div class="doc-list-info">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
-        <div>
-          <div class="doc-list-name">${esc(d.title || d.filename)}</div>
-          <div class="doc-list-pages">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</div>
-        </div>
+    <div class="doc-chip">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+      <div class="doc-chip-info">
+        <span class="doc-chip-name">${esc(d.title || d.filename)}</span>
+        <span class="doc-chip-meta">${d.page_count} page${d.page_count !== 1 ? 's' : ''}${d.file_size ? ' \u00b7 ' + fmtFileSize(d.file_size) : ''}</span>
       </div>
-      <button class="btn btn-sm btn-outline-danger remove-doc-btn" data-doc-idx="${i}">Remove</button>
+      <button class="doc-chip-remove remove-doc-btn" data-doc-idx="${i}" title="Remove">&times;</button>
     </div>
   `).join('');
   document.querySelectorAll('.remove-doc-btn').forEach(btn => {
@@ -799,19 +804,33 @@ document.getElementById('add-recipient-btn').addEventListener('click', async () 
 
 function renderRecipientsList() {
   const el = document.getElementById('recipients-list');
-  el.innerHTML = wizard.recipients.map((r, i) => `
-    <div class="recipient-row">
-      <span class="recipient-color" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
-      <div class="recipient-info">
-        <div class="recipient-name">${esc(r.name)}</div>
-        <div class="recipient-email">${esc(r.email)}</div>
-      </div>
-      <span class="recipient-role-badge role-${r.role}">${r.role === 'signer' ? 'Signer' : 'CC'}</span>
-      <span class="recipient-order">#${r.order_num || i + 1}</span>
-      <button class="btn btn-sm btn-outline-danger" onclick="removeRecipient(${i})">Remove</button>
-    </div>
-  `).join('');
+  el.innerHTML = wizard.recipients.map((r, i) => {
+    const color = r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length];
+    return `
+    <div class="recipient-row-v2">
+      <div class="recipient-num" style="background:${color}">${i + 1}</div>
+      <select class="recipient-role-select" onchange="updateRecipientRole(${i}, this.value)">
+        <option value="signer" ${r.role === 'signer' ? 'selected' : ''}>Needs to Sign</option>
+        <option value="cc" ${r.role === 'cc' ? 'selected' : ''}>Receives a Copy</option>
+      </select>
+      <input type="text" class="recipient-input" value="${esc(r.name)}" placeholder="Full name" readonly>
+      <input type="text" class="recipient-input" value="${esc(r.email)}" placeholder="Email" readonly>
+      <button class="recipient-remove" onclick="removeRecipient(${i})" title="Remove">&times;</button>
+    </div>`;
+  }).join('');
   document.getElementById('wizard-next-2').disabled = wizard.recipients.filter(x => x.role === 'signer').length === 0;
+}
+
+async function updateRecipientRole(idx, newRole) {
+  const r = wizard.recipients[idx];
+  try {
+    await api(`/api/envelopes/${wizard.envelopeId}/recipients/${r.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ role: newRole })
+    });
+    r.role = newRole;
+    renderRecipientsList();
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 async function removeRecipient(idx) {
@@ -927,6 +946,10 @@ function updateRecipientFieldCounts() {
     const countEl = btn.querySelector('.field-count');
     if (countEl) countEl.textContent = count;
   });
+  const summaryEl = document.getElementById('field-count-summary');
+  if (summaryEl) {
+    summaryEl.innerHTML = `<strong>${wizard.fields.length}</strong> field${wizard.fields.length !== 1 ? 's' : ''} placed`;
+  }
 }
 
 // Draggable field types
@@ -1128,11 +1151,15 @@ function renderReview() {
             ${message ? `<div style="font-size:12px;color:var(--ink3);line-height:1.5">${esc(message)}</div>` : '<div style="font-size:12px;color:var(--ink4)">No message added</div>'}
           </div>
         </div>
-        <!-- Summary -->
-        <div class="review-summary-stats" style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg)">
-          <div class="review-stat"><strong>${wizard.documents.length}</strong>document${wizard.documents.length !== 1 ? 's' : ''}</div>
-          <div class="review-stat"><strong>${signers.length}</strong>signer${signers.length !== 1 ? 's' : ''}</div>
-          <div class="review-stat"><strong>${wizard.fields.length}</strong>field${wizard.fields.length !== 1 ? 's' : ''}</div>
+        <!-- Deadline -->
+        <div class="detail-card" style="margin-bottom:16px">
+          <div class="detail-card-head"><div style="display:flex;align-items:center;gap:8px"><div class="step-badge">3</div><h3>Deadline</h3></div></div>
+          <div class="detail-card-body">
+            <div style="display:flex;align-items:center;gap:10px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <span style="font-size:13px;color:var(--ink3)">No expiration set &mdash; signers can complete at any time</span>
+            </div>
+          </div>
         </div>
       </div>
       <!-- Email Preview -->
@@ -1361,6 +1388,29 @@ function updateSigningProgress() {
   const pct = required.length > 0 ? (filled.length / required.length) * 100 : 0;
   document.getElementById('signing-progress-fill').style.width = pct + '%';
   document.getElementById('finish-signing-btn').disabled = filled.length < required.length;
+  const sideBtn = document.getElementById('finish-signing-btn-side');
+  if (sideBtn) sideBtn.disabled = filled.length < required.length;
+
+  // Status pill
+  const pill = document.getElementById('signing-status-pill');
+  if (pill) pill.textContent = `${filled.length} of ${required.length} fields`;
+
+  // Checklist
+  const checklistEl = document.getElementById('signing-checklist-items');
+  if (checklistEl) {
+    checklistEl.innerHTML = signing.data.fields.map(f => {
+      const done = f.value ? 'done' : '';
+      return `<div class="checklist-item ${done}" data-field-id="${f.id}" onclick="scrollToSigningField('${f.id}')">
+        <div class="checklist-check">${f.value ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>' : ''}</div>
+        <span>${FIELD_LABELS[f.type] || f.type}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+function scrollToSigningField(fieldId) {
+  const el = document.querySelector(\`.signing-field[data-field-id="\${fieldId}"]\`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // Signature fonts
@@ -1371,7 +1421,6 @@ const SIG_FONTS = [
   { name: 'Sacramento', family: "'Sacramento', cursive" },
   { name: 'Pacifico', family: "'Pacifico', cursive" },
   { name: 'Caveat', family: "'Caveat', cursive" },
-  { name: 'Satisfy', family: "'Satisfy', cursive" },
 ];
 let selectedSigFont = SIG_FONTS[0];
 
@@ -1511,6 +1560,9 @@ document.getElementById('apply-signature-btn').addEventListener('click', async (
 });
 
 // Finish signing
+document.getElementById('finish-signing-btn-side')?.addEventListener('click', () => {
+  document.getElementById('finish-signing-btn').click();
+});
 document.getElementById('finish-signing-btn').addEventListener('click', async () => {
   try {
     await api(`/api/sign/${signing.token}/complete`, { method: 'POST' });
@@ -1520,6 +1572,25 @@ document.getElementById('finish-signing-btn').addEventListener('click', async ()
     document.querySelector('.done-icon').textContent = '\u2713';
     document.querySelector('.done-icon').style.background = '#0a6b5c';
     document.querySelector('.done-icon').style.color = '#fff';
+    // Summary
+    const summary = document.getElementById('done-summary');
+    if (summary && signing.data) {
+      const now = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      summary.innerHTML = `Signed "${esc(signing.data.envelope_title)}" on ${now}`;
+      summary.style.display = '';
+    }
+    // Download button
+    const dlBtn = document.getElementById('done-download-btn');
+    if (dlBtn && signing.data) {
+      dlBtn.style.display = '';
+      dlBtn.onclick = () => {
+        const docId = signing.data.documents[0]?.id;
+        if (docId) window.open(`/api/sign/${signing.token}/documents/${docId}/pdf`, '_blank');
+      };
+    }
+    // Email note
+    const emailNote = document.getElementById('done-email-note');
+    if (emailNote) emailNote.style.display = '';
   } catch (err) { toast(err.message, 'error'); }
 });
 
