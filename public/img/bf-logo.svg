@@ -1,7 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" rx="6" fill="#5B21B6"/>
-  <path d="M6 5 L14 5 L14 11 L10 11 Z" fill="white"/>
-  <path d="M14 11 L26 11 L26 21 L14 21 Z" fill="white"/>
-  <path d="M6 21 L14 21 L14 27 L10 27 Z" fill="white"/>
-  <path d="M10 11 L14 11 L14 21 L10 21 Z" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 290 212" width="290" height="212">
+  <!-- Background: rectangle with rounded top-right and bottom-right corners -->
+  <path d="M0 0 H220 Q290 0 290 70 V142 Q290 212 220 212 H0 Z" fill="#5B21B6"/>
+  <!-- White zigzag ribbon forming stylized BF -->
+  <polygon points="0,0 100,0 185,90 80,90" fill="white"/>
+  <polygon points="80,90 185,90 185,122 80,122" fill="white"/>
+  <polygon points="80,122 185,122 290,212 185,212" fill="white"/>
 </svg>
