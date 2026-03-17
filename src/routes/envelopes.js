@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const db = require('../database');
@@ -16,12 +17,21 @@ const storage = multer.diskStorage({
     cb(null, `${uuidv4()}${path.extname(file.originalname)}`);
   }
 });
+const ALLOWED_MIMETYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.oasis.opendocument.text',
+  'application/vnd.oasis.opendocument.spreadsheet',
+]);
 const upload = multer({
   storage,
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') cb(null, true);
-    else cb(new Error('Only PDF files are allowed'));
+    if (ALLOWED_MIMETYPES.has(file.mimetype)) cb(null, true);
+    else cb(new Error('Unsupported file type. Please upload PDF, Word, or spreadsheet files.'));
   }
 });
 
@@ -247,10 +257,29 @@ router.post('/:id/documents', requireAuth, upload.single('file'), async (req, re
 
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
+  // Convert non-PDF files to PDF using LibreOffice
+  let filePath = req.file.path;
+  if (req.file.mimetype !== 'application/pdf') {
+    try {
+      const outDir = path.dirname(filePath);
+      execSync(`libreoffice --headless --convert-to pdf --outdir "${outDir}" "${filePath}"`, { timeout: 30000 });
+      const pdfPath = filePath.replace(path.extname(filePath), '.pdf');
+      if (fs.existsSync(pdfPath)) {
+        fs.unlinkSync(filePath);
+        filePath = pdfPath;
+      } else {
+        throw new Error('Conversion failed');
+      }
+    } catch (e) {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      return res.status(400).json({ error: 'Failed to convert file to PDF. Please upload a valid document.' });
+    }
+  }
+
   // Get page count using pdf-lib
   let pageCount = 1;
   try {
-    const pdfBytes = fs.readFileSync(req.file.path);
+    const pdfBytes = fs.readFileSync(filePath);
     const pdfDoc = await PDFDocument.load(pdfBytes);
     pageCount = pdfDoc.getPageCount();
   } catch (e) {
@@ -266,7 +295,7 @@ router.post('/:id/documents', requireAuth, upload.single('file'), async (req, re
   db.prepare(`
     INSERT INTO envelope_documents (id, envelope_id, title, filename, file_path, page_count, order_num)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(docId, envelope.id, title, req.file.originalname, req.file.path, pageCount, existingCount);
+  `).run(docId, envelope.id, title, req.file.originalname, filePath, pageCount, existingCount);
 
   db.prepare("UPDATE envelopes SET updated_at = datetime('now') WHERE id = ?").run(envelope.id);
 

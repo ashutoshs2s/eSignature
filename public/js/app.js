@@ -536,18 +536,20 @@ document.getElementById('wizard-file-drop').addEventListener('dragover', e => {
 document.getElementById('wizard-file-drop').addEventListener('dragleave', e => {
   e.currentTarget.classList.remove('drag-over');
 });
+const ALLOWED_EXTENSIONS = /\.(pdf|doc|docx|xls|xlsx|odt|ods)$/i;
 document.getElementById('wizard-file-drop').addEventListener('drop', async e => {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
   for (const file of e.dataTransfer.files) {
-    if (file.type === 'application/pdf') await uploadWizardDoc(file);
+    if (ALLOWED_EXTENSIONS.test(file.name)) await uploadWizardDoc(file);
+    else toast('Unsupported file type. Please upload PDF, Word, or Excel files.', 'error');
   }
 });
 
 async function uploadWizardDoc(file) {
   const titleInput = document.getElementById('envelope-title');
   if (!titleInput.value.trim()) {
-    titleInput.value = file.name.replace(/\.pdf$/i, '');
+    titleInput.value = file.name.replace(/\.(pdf|docx?|xlsx?|odt|ods)$/i, '');
   }
   await api(`/api/envelopes/${wizard.envelopeId}`, {
     method: 'PUT',
@@ -579,9 +581,15 @@ function renderWizardDocs() {
           <div class="doc-list-pages">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</div>
         </div>
       </div>
-      <button class="btn btn-sm btn-outline-danger" onclick="removeWizardDoc(${i})">Remove</button>
+      <button class="btn btn-sm btn-outline-danger remove-doc-btn" data-doc-idx="${i}">Remove</button>
     </div>
   `).join('');
+  document.querySelectorAll('.remove-doc-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeWizardDoc(parseInt(btn.dataset.docIdx));
+    });
+  });
 }
 
 async function removeWizardDoc(idx) {
