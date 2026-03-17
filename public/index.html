@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Dancing+Script:wght@500;700&family=Great+Vibes&family=Alex+Brush&family=Sacramento&family=Pacifico&family=Caveat:wght@500;700&family=Satisfy&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=9">
+  <link rel="stylesheet" href="/css/style.css?v=10">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
@@ -18,12 +18,16 @@
     <header class="topnav hidden" id="topnav">
       <div class="topnav-left">
         <div class="topnav-brand" onclick="navigate('dashboard')">
-          <img src="/img/bf-logo.svg" alt="BF" class="topnav-logo-img">
-          <span class="topnav-brand-name">eSign</span>
+          <div class="topnav-logo-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" style="width:13px;height:13px"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          </div>
+          <span class="topnav-brand-name">Sign</span>
         </div>
         <nav class="topnav-links">
           <a class="topnav-link active" data-view="dashboard" onclick="navigate('dashboard')">Home</a>
           <a class="topnav-link" data-view="agreements" onclick="navigate('agreements')">Agreements</a>
+          <a class="topnav-link" data-view="templates" onclick="navigate('templates')">Templates</a>
+          <a class="topnav-link" data-view="reports" onclick="navigate('reports')">Reports</a>
           <a class="topnav-link admin-only hidden" data-view="admin" onclick="navigate('admin')">Admin</a>
         </nav>
       </div>
@@ -49,8 +53,10 @@
           <div class="auth-left">
             <div class="auth-brand">
               <div class="auth-brand-logo">
-                <img src="/img/bf-logo.svg" alt="BuyerForesight" style="width:48px;height:48px;border-radius:14px;">
-                <span class="auth-brand-name">eSign</span>
+                <div class="auth-brand-mark">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:24px;height:24px"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                </div>
+                <span class="auth-brand-name">Sign</span>
               </div>
               <div class="auth-headline">Documents signed. Deals closed.<br>In minutes, not days.</div>
               <ul class="auth-features">
@@ -235,16 +241,7 @@
 
       <!-- ENVELOPE DETAIL VIEW -->
       <div id="envelope-detail-view" class="view hidden">
-        <div class="topbar">
-          <button class="btn btn-ghost" id="back-to-dashboard">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Back
-          </button>
-          <span class="topbar-title" id="detail-topbar-title"></span>
-        </div>
-        <div class="page-content">
-          <div id="envelope-detail"></div>
-        </div>
+        <div id="envelope-detail" style="display:flex;flex-direction:column;flex:1"></div>
       </div>
 
       <!-- WIZARD VIEW -->
@@ -384,14 +381,12 @@
 
           <!-- Step 4: Review & Send -->
           <div class="wizard-panel hidden" id="wizard-step-4">
-            <div class="wizard-form">
-              <h3>Review & Send</h3>
-              <p class="help-text">Review your envelope details before sending.</p>
+            <div style="flex:1;overflow-y:auto;padding:24px">
               <div id="review-summary" class="review-summary"></div>
-              <div class="wizard-actions">
-                <button class="btn btn-secondary" id="wizard-prev-4">Back</button>
-                <button class="btn btn-primary btn-lg" id="wizard-send" style="background:var(--teal)">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <div style="display:flex;justify-content:space-between;max-width:1000px;margin:24px auto 0">
+                <button class="btn btn-secondary" id="wizard-prev-4">&#8592; Back</button>
+                <button class="btn btn-primary btn-lg" id="wizard-send" style="background:var(--teal);padding:10px 24px">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   Send for Signature
                 </button>
               </div>
@@ -404,7 +399,9 @@
       <div id="signing-view" class="view hidden">
         <div class="signing-chrome">
           <div class="signing-topbar">
-            <img src="/img/bf-logo.svg" alt="BF" style="width:26px;height:26px;border-radius:7px;">
+            <div class="topnav-logo-mark" style="width:26px;height:26px;border-radius:6px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" style="width:12px;height:12px"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </div>
             <div id="signing-info" class="signing-info"></div>
             <div class="signing-topbar-actions">
               <button class="btn btn-outline-danger btn-sm" id="decline-btn">Decline</button>
@@ -423,7 +420,9 @@
       <!-- ACCESS CODE VIEW -->
       <div id="access-code-view" class="view hidden">
         <div class="done-container">
-          <img src="/img/bf-logo.svg" alt="BF" style="width:48px;height:48px;border-radius:14px;margin-bottom:24px;">
+          <div class="auth-brand-mark" style="width:48px;height:48px;border-radius:14px;margin-bottom:24px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:24px;height:24px"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          </div>
           <h2 style="font-size:20px;margin-bottom:8px;">Enter Access Code</h2>
           <p class="text-muted" id="access-code-label" style="margin-bottom:20px"></p>
           <form id="access-code-form" style="max-width:340px;width:100%;">
@@ -473,6 +472,72 @@
         </div>
       </div>
     </div>
+
+      <!-- TEMPLATES VIEW -->
+      <div id="templates-view" class="view hidden">
+        <div class="templates-layout">
+          <aside class="agreements-sidebar">
+            <button class="btn btn-primary agreements-start-btn" onclick="startWizard()">Create Template</button>
+            <div class="agreements-nav-section">
+              <div class="agreements-nav-label">ENVELOPE TEMPLATES</div>
+              <div class="agreements-nav-item active">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                My Templates
+              </div>
+              <div class="agreements-nav-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Shared with Me
+              </div>
+              <div class="agreements-nav-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Favorites
+              </div>
+            </div>
+          </aside>
+          <div class="templates-main">
+            <div style="padding:24px">
+              <div class="templates-promo">
+                <div class="templates-promo-icon">&#128196;</div>
+                <div class="templates-promo-content">
+                  <h2>Resending the same envelopes?</h2>
+                  <p>Save documents, placeholder recipients and fields as a template so you can save time.</p>
+                  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                    <button class="btn btn-primary" onclick="startWizard()">Create a Template</button>
+                  </div>
+                </div>
+              </div>
+              <div id="templates-recent" style="border-top:1px solid var(--border);padding-top:24px">
+                <h3 style="font-size:15px;font-weight:500;color:var(--ink);margin-bottom:16px">Save a recent envelope as a template</h3>
+                <div id="templates-recent-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTS VIEW -->
+      <div id="reports-view" class="view hidden">
+        <div class="reports-layout">
+          <aside class="agreements-sidebar" style="width:200px">
+            <div style="padding:8px 0">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink4);padding:8px 12px">Dashboards</div>
+              <div class="agreements-nav-item active">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Dashboard
+              </div>
+            </div>
+          </aside>
+          <div class="reports-main">
+            <div class="topbar">
+              <span class="topbar-title" style="font-size:18px;font-weight:600">Dashboard</span>
+            </div>
+            <div class="reports-content">
+              <div id="reports-stats" class="reports-stats"></div>
+              <div id="reports-charts"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
     <!-- ============================================================
          MODALS
@@ -590,6 +655,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=9"></script>
+  <script src="/js/app.js?v=10"></script>
 </body>
 </html>

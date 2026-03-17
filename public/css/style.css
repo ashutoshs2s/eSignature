@@ -17,10 +17,10 @@
   --surface2:  #eeecea;
   --surface3:  #e3e0db;
   --white:     #ffffff;
-  --accent:    #4A1D96;
-  --accent2:   #5B21B6;
-  --accent3:   #7C3AED;
-  --accent-light: #F3EEFF;
+  --accent:    #1a4a72;
+  --accent2:   #2563a8;
+  --accent3:   #3b8fd4;
+  --accent-light: #e8f0fb;
   --teal:      #0a6b5c;
   --teal2:     #14967f;
   --teal-light: #d4ede8;
@@ -68,6 +68,12 @@
   --signing-yellow-dark: #D4A90F;
   --signing-yellow-bg: #FFF8E1;
   --signing-yellow-border: #FFD54F;
+  --navy: #0f1923;
+  --navy2: #1c2d3e;
+  --blue: #1a4a72;
+  --blue2: #2563a8;
+  --blue3: #3b8fd4;
+  --blue-bg: #e8f0fb;
 }
 
 html {
@@ -127,6 +133,13 @@ svg { display: inline-block; flex-shrink: 0; }
   width: 28px; height: 28px;
   border-radius: 6px;
   object-fit: contain;
+}
+.topnav-logo-mark {
+  width: 28px; height: 28px;
+  background: var(--accent2);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 .topnav-brand-name {
   font-family: var(--font-display);
@@ -350,7 +363,7 @@ svg { display: inline-block; flex-shrink: 0; }
 
 /* ===== DASHBOARD HERO BANNER ===== */
 .dash-hero {
-  background: linear-gradient(135deg, #1a0a3e 0%, #3b1578 40%, #5B21B6 100%);
+  background: linear-gradient(135deg, #0f1923 0%, #1e3a56 60%, #0f2540 100%);
   padding: 52px 36px 48px;
   text-align: center;
 }
@@ -2204,13 +2217,205 @@ textarea.input-lg {
 /* -----------------------------------------------------------------------
    19. RESPONSIVE
    ----------------------------------------------------------------------- */
+/* -----------------------------------------------------------------------
+   20. AUDIT TIMELINE
+   ----------------------------------------------------------------------- */
+.timeline { padding: 18px; }
+.t-event { display: flex; gap: 12px; margin-bottom: 18px; }
+.t-event:last-child { margin-bottom: 0; }
+.t-icon-col { display: flex; flex-direction: column; align-items: center; }
+.t-icon {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.t-icon.sent { background: var(--accent-light); color: var(--accent2); }
+.t-icon.viewed { background: var(--gold-light); color: var(--gold); }
+.t-icon.signed { background: var(--teal-light); color: var(--teal); }
+.t-icon.complete { background: var(--teal-light); color: var(--teal); }
+.t-icon.notif { background: var(--surface2); color: var(--ink3); }
+.t-icon.declined { background: var(--rose-light); color: var(--rose); }
+.t-icon.voided { background: var(--surface3); color: var(--ink3); }
+.t-icon.created { background: var(--accent-light); color: var(--accent2); }
+.t-line { width: 1px; flex: 1; background: var(--border2); margin-top: 4px; min-height: 16px; }
+.t-body { flex: 1; padding-top: 5px; }
+.t-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+.t-meta { font-size: 11px; color: var(--ink4); margin-top: 2px; line-height: 1.5; }
+
+/* -----------------------------------------------------------------------
+   21. DETAIL VIEW REDESIGN
+   ----------------------------------------------------------------------- */
+.detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  max-width: 1020px;
+  margin: 0 auto;
+}
+.detail-main-col { display: flex; flex-direction: column; gap: 16px; }
+.detail-side-col { display: flex; flex-direction: column; gap: 14px; }
+.detail-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.detail-card-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.detail-card-head h3 { font-size: 13px; font-weight: 600; color: var(--ink); margin: 0; }
+.detail-card-body { padding: 16px 18px; }
+.detail-info-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.detail-info-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink4); margin-bottom: 3px;
+}
+.detail-info-value { font-size: 13px; color: var(--ink); }
+.detail-topbar {
+  background: var(--white); padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.signer-status-row {
+  display: flex; align-items: center; gap: 10px; padding: 12px 0;
+}
+.signer-status-row + .signer-status-row { border-top: 1px solid var(--border); }
+
+/* -----------------------------------------------------------------------
+   22. BAR CHART (Reports)
+   ----------------------------------------------------------------------- */
+.bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 120px; padding: 0 4px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.bar-fill { width: 100%; border-radius: 4px 4px 0 0; }
+.bar-lbl { font-size: 10px; color: var(--ink4); }
+.rate-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.rate-card {
+  text-align: center; padding: 18px; border-radius: var(--r-lg);
+}
+.rate-card-val {
+  font-family: var(--font-display); font-size: 32px; margin-bottom: 4px;
+}
+.rate-card-lbl { font-size: 12px; font-weight: 500; }
+
+/* -----------------------------------------------------------------------
+   23. EMAIL PREVIEW (Review step)
+   ----------------------------------------------------------------------- */
+.review-layout {
+  display: grid; grid-template-columns: 1fr 340px; gap: 20px;
+  max-width: 1000px; margin: 0 auto;
+}
+.email-prev {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  position: sticky; top: 24px;
+}
+.ep-hdr {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 13px 18px;
+}
+.ep-hdr h3 {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink3); margin: 0;
+}
+.ep-body { padding: 20px 18px; }
+.em-logo {
+  display: flex; align-items: center; gap: 7px;
+  margin-bottom: 16px; padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.em-logo-mark {
+  width: 22px; height: 22px; background: var(--accent2); border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+}
+.em-logo-mark svg { width: 11px; height: 11px; }
+.em-logo-text { font-family: var(--font-display); font-style: italic; font-size: 13px; color: var(--ink); }
+.em-subject { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+.em-greeting { font-size: 12px; color: var(--ink2); line-height: 1.6; margin-bottom: 14px; }
+.em-doc-block {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 12px 14px; display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.em-doc-block svg { width: 18px; height: 18px; color: var(--accent2); }
+.em-cta {
+  background: var(--accent2); color: #fff; text-align: center;
+  padding: 10px; border-radius: var(--r);
+  font-size: 12px; font-weight: 600; margin-bottom: 14px;
+}
+.em-footer { font-size: 10px; color: var(--ink4); text-align: center; line-height: 1.6; }
+
+/* Step badge for review cards */
+.step-badge {
+  width: 21px; height: 21px; border-radius: 50%; background: var(--accent2);
+  color: #fff; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* -----------------------------------------------------------------------
+   24. TEMPLATES PAGE
+   ----------------------------------------------------------------------- */
+.templates-layout {
+  display: flex;
+  min-height: calc(100vh - 56px);
+}
+.templates-main {
+  flex: 1;
+  background: var(--surface);
+  overflow-y: auto;
+}
+.templates-promo {
+  display: flex; align-items: center; gap: 36px;
+  background: var(--accent-light); border-radius: var(--r-lg);
+  padding: 32px; margin-bottom: 32px; flex-wrap: wrap;
+}
+.templates-promo-icon { font-size: 64px; flex-shrink: 0; }
+.templates-promo-content { flex: 1; min-width: 240px; }
+.templates-promo-content h2 {
+  font-family: var(--font-display); font-size: 20px; font-style: italic;
+  color: var(--ink); margin-bottom: 8px;
+}
+.templates-promo-content p {
+  font-size: 13px; color: var(--ink3); line-height: 1.6; margin-bottom: 16px;
+}
+
+/* -----------------------------------------------------------------------
+   25. REPORTS PAGE
+   ----------------------------------------------------------------------- */
+.reports-layout {
+  display: flex;
+  min-height: calc(100vh - 56px);
+}
+.reports-main {
+  flex: 1;
+  background: var(--surface);
+  overflow-y: auto;
+}
+.reports-content {
+  padding: 24px;
+}
+.reports-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;
+}
+@media (max-width: 900px) { .reports-stats { grid-template-columns: repeat(2, 1fr); } }
+
+/* -----------------------------------------------------------------------
+   RESPONSIVE
+   ----------------------------------------------------------------------- */
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .main-area { margin-left: 0; }
   .auth-left { display: none; }
   .auth-right { width: 100%; }
   .detail-grid { grid-template-columns: 1fr; }
+  .detail-layout { grid-template-columns: 1fr; }
+  .review-layout { grid-template-columns: 1fr; }
   .stats-row, .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .envelope-row { grid-template-columns: 1fr auto; }
   .envelope-meta, .envelope-recipients, .envelope-date { display: none; }
+  .templates-layout, .reports-layout { flex-direction: column; }
 }

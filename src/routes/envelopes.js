@@ -37,8 +37,8 @@ const upload = multer({
 
 // Recipient colors for field editor
 const RECIPIENT_COLORS = [
-  '#5B21B6', '#0891B2', '#059669', '#D97706', '#DC2626',
-  '#7C3AED', '#2563EB', '#10B981', '#F59E0B', '#EF4444'
+  '#2563a8', '#14967f', '#059669', '#D97706', '#DC2626',
+  '#3b8fd4', '#0891B2', '#10B981', '#F59E0B', '#EF4444'
 ];
 
 // ===================== Envelopes =====================

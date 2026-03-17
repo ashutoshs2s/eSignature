@@ -27,7 +27,7 @@ const signing = {
   signatureMode: 'draw',
 };
 
-const RECIPIENT_COLORS = ['#5B21B6','#14967f','#059669','#D97706','#DC2626','#7C3AED','#0891B2','#10B981','#F59E0B','#EF4444'];
+const RECIPIENT_COLORS = ['#2563a8','#14967f','#059669','#D97706','#DC2626','#3b8fd4','#0891B2','#10B981','#F59E0B','#EF4444'];
 const FIELD_LABELS = { signature:'Signature', initials:'Initials', date_signed:'Date Signed', text:'Text', name:'Name', email:'Email', checkbox:'Checkbox' };
 const FIELD_DEFAULTS = {
   signature: { w: 20, h: 5 }, initials: { w: 10, h: 5 }, date_signed: { w: 16, h: 3.5 },
@@ -90,6 +90,8 @@ function navigate(view) {
   if (view === 'dashboard') { showView('dashboard-view'); loadEnvelopes(); loadDashboardStats(); }
   else if (view === 'agreements') { showView('agreements-view'); loadAgreements(); }
   else if (view === 'inbox') { showView('agreements-view'); loadAgreements('action_required'); }
+  else if (view === 'templates') { showView('templates-view'); loadTemplatesView(); }
+  else if (view === 'reports') { showView('reports-view'); loadReportsView(); }
   else if (view === 'admin') { showView('admin-view'); loadAdminPanel(); }
 }
 
@@ -161,7 +163,8 @@ function showApp() {
   // Set user info in top nav
   document.getElementById('topnav-initials').textContent = getInitials(currentUser.name);
   document.getElementById('topnav-user-name').textContent = currentUser.name;
-  document.getElementById('dash-welcome').textContent = `Welcome back, ${currentUser.name}`;
+  const welcome = document.getElementById('dash-welcome');
+  if (welcome) welcome.textContent = `Welcome back, ${currentUser.name}`;
 
   // Show admin nav if admin
   document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', currentUser.role !== 'admin'));
@@ -235,8 +238,7 @@ document.getElementById('register-form').addEventListener('submit', async e => {
 document.getElementById('logout-btn').addEventListener('click', async () => {
   await api('/api/auth/logout', { method: 'POST' });
   currentUser = null;
-  document.getElementById('sidebar').classList.add('hidden');
-  document.getElementById('main-area').style.marginLeft = '0';
+  document.getElementById('topnav')?.classList.add('hidden');
   showView('auth-view');
 });
 
@@ -440,6 +442,34 @@ async function loadInbox() {
 }
 
 // ==================== Envelope Detail ====================
+function auditIcon(action) {
+  const map = {
+    envelope_created: 'created',
+    envelope_sent: 'sent',
+    document_viewed: 'viewed',
+    field_completed: 'signed',
+    signing_completed: 'complete',
+    recipient_signed: 'complete',
+    envelope_completed: 'complete',
+    reminder_sent: 'notif',
+    envelope_declined: 'declined',
+    envelope_voided: 'voided',
+    next_signer_notified: 'notif',
+  };
+  const cls = map[action] || 'sent';
+  const icons = {
+    created: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    sent: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    viewed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    signed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
+    complete: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>',
+    notif: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>',
+    declined: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    voided: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+  };
+  return `<div class="t-icon ${cls}">${icons[cls] || icons.sent}</div>`;
+}
+
 async function viewEnvelope(id) {
   currentEnvelopeId = id;
   try {
@@ -448,83 +478,110 @@ async function viewEnvelope(id) {
     document.getElementById('detail-topbar-title').innerHTML = `${esc(env.title)} <span class="status-badge status-${env.status}" style="margin-left:8px">${env.status}</span>`;
     const el = document.getElementById('envelope-detail');
 
+    const totalFields = env.fields ? env.fields.length : 0;
+    const signedFields = env.fields ? env.fields.filter(f => f.value).length : 0;
+    const totalPages = env.documents.reduce((s, d) => s + (d.page_count || 0), 0);
+
     el.innerHTML = `
-      <div class="detail-header">
-        <div>
-          <h2>${esc(env.title)}</h2>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-            <span class="status-badge status-${env.status}">${env.status}</span>
-            <span style="font-size:13px;color:var(--ink3);">Created ${fmtDateShort(env.created_at)}</span>
-          </div>
-          ${env.message ? `<p class="detail-message">${esc(env.message)}</p>` : ''}
-        </div>
-        <div class="detail-actions">
-          ${env.status === 'sent' ? `<button class="btn btn-outline-danger btn-sm" onclick="openVoidModal('${env.id}')">Void</button>` : ''}
-          ${env.status === 'completed' ? `
-            <button class="btn btn-secondary btn-sm" onclick="downloadEnvelope('${env.id}')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              Download
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="downloadCertificate('${env.id}')">Certificate</button>
-          ` : ''}
-          ${env.status === 'draft' ? `<button class="btn btn-primary btn-sm" onclick="resumeWizard('${env.id}')">Edit & Send</button>` : ''}
-          <button class="btn btn-outline-danger btn-sm" onclick="deleteEnvelope('${env.id}')">Delete</button>
+      <div class="detail-topbar">
+        <button class="btn btn-ghost" style="font-size:12px;padding:5px 8px;color:var(--accent2)" onclick="navigate('agreements')">&#8592; Back</button>
+        <span style="font-size:15px;font-weight:600;color:var(--ink)">${esc(env.title)}</span>
+        <span class="status-badge status-${env.status}" style="margin-left:4px">${env.status}</span>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          ${env.status === 'sent' ? `<button class="btn btn-ghost" style="font-size:12px" onclick="openVoidModal('${env.id}')">Void</button>` : ''}
+          <button class="btn btn-ghost" style="font-size:12px" onclick="deleteEnvelope('${env.id}')">Delete</button>
         </div>
       </div>
-      <div class="detail-grid">
-        <div class="detail-section">
-          <h3>Recipients</h3>
-          ${env.recipients.map((r, i) => `
-            <div class="signer-item">
-              <div class="signer-info">
-                <span class="signer-color-dot" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
-                <div style="flex:1;min-width:0;">
-                  <div style="font-weight:600;font-size:14px;">${esc(r.name)}</div>
-                  <div style="font-size:12px;color:var(--ink3);margin-top:1px;">${esc(r.email)}</div>
-                  <div style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                    <span class="status-badge status-${r.status}">${r.status}</span>
-                    ${r.role === 'cc' ? '<span class="status-badge" style="background:var(--surface2);color:var(--ink3)">CC</span>' : ''}
-                    ${r.signed_at ? `<span style="font-size:11px;color:var(--ink4);">Signed ${fmtDateShort(r.signed_at)}</span>` : ''}
-                    ${r.decline_reason ? `<span style="font-size:11px;color:var(--rose);">Reason: ${esc(r.decline_reason)}</span>` : ''}
-                  </div>
+      <div style="flex:1;overflow-y:auto;background:var(--surface);padding:22px">
+        <div class="detail-layout">
+          <div class="detail-main-col">
+            <!-- Audit Timeline -->
+            <div class="detail-card">
+              <div class="detail-card-head"><h3>Audit Trail</h3><span style="font-size:11px;color:var(--ink3)">All times UTC</span></div>
+              <div class="timeline">
+                ${env.auditLog.length === 0 ? '<p style="color:var(--ink3);font-size:13px;padding:0 18px 18px">No activity yet.</p>' :
+                  env.auditLog.map((a, i) => `
+                    <div class="t-event">
+                      <div class="t-icon-col">
+                        ${auditIcon(a.action)}
+                        ${i < env.auditLog.length - 1 ? '<div class="t-line"></div>' : ''}
+                      </div>
+                      <div class="t-body">
+                        <div class="t-title">${esc(a.action.replace(/_/g, ' '))}</div>
+                        <div class="t-meta">${esc(a.actor)}${a.details ? ' &middot; ' + esc(a.details) : ''}<br>${fmtDate(a.created_at)}${a.ip_address ? ' &middot; IP: ' + esc(a.ip_address) : ''}</div>
+                      </div>
+                    </div>
+                  `).join('')}
+              </div>
+            </div>
+            <!-- Document Details -->
+            <div class="detail-card">
+              <div class="detail-card-head"><h3>Document Details</h3></div>
+              <div class="detail-card-body">
+                <div class="detail-info-grid">
+                  <div><div class="detail-info-label">File</div><div class="detail-info-value">${env.documents.map(d => esc(d.title || d.filename)).join(', ')}</div></div>
+                  <div><div class="detail-info-label">Pages</div><div class="detail-info-value">${totalPages}</div></div>
+                  <div><div class="detail-info-label">Sent</div><div class="detail-info-value">${fmtDateShort(env.created_at)}</div></div>
+                  <div><div class="detail-info-label">Expires</div><div class="detail-info-value" ${env.expires_at ? 'style="color:var(--rose)"' : ''}>${env.expires_at ? fmtDateShort(env.expires_at) : 'No expiry'}</div></div>
+                  <div><div class="detail-info-label">Signing Order</div><div class="detail-info-value">Sequential</div></div>
+                  <div><div class="detail-info-label">Fields</div><div class="detail-info-value">${totalFields} total (${signedFields} signed)</div></div>
                 </div>
               </div>
-              ${env.status === 'sent' && (r.status === 'sent' || r.status === 'delivered') ? `
-                <div style="display:flex;gap:6px;flex-shrink:0;">
-                  <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('${location.origin}/sign/${r.token}')">Copy Link</button>
-                  <button class="btn btn-sm btn-secondary" onclick="resendReminder('${env.id}','${r.id}')">Resend</button>
-                </div>
-              ` : ''}
             </div>
-          `).join('')}
-        </div>
-        <div class="detail-section">
-          <h3>Documents</h3>
-          ${env.documents.map(d => `
-            <div class="doc-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
-              <span style="font-weight:500;">${esc(d.title)}</span>
-              <span style="color:var(--ink4);font-size:12px;">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="detail-side-col">
+            <!-- Signer Status -->
+            <div class="detail-card">
+              <div class="detail-card-head"><h3>Signer Status</h3></div>
+              <div style="padding:14px 18px;display:flex;flex-direction:column;gap:0">
+                ${env.recipients.map((r, i) => `
+                  <div class="signer-status-row">
+                    <div class="avatar" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]};width:34px;height:34px;font-size:12px">${getInitials(r.name)}</div>
+                    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--ink)">${esc(r.name)}</div><div style="font-size:11px;color:var(--ink4)">${esc(r.email)}</div></div>
+                    <span class="status-badge status-${r.status}">${r.status}</span>
+                  </div>
+                `).join('')}
+              </div>
+              ${env.status === 'sent' ? `<div style="padding:0 18px 16px">${env.recipients.filter(r => r.status === 'sent' || r.status === 'delivered').map(r => `
+                <button class="btn btn-secondary" style="width:100%;justify-content:center;font-size:12px;margin-bottom:6px" onclick="resendReminder('${env.id}','${r.id}')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+                  Remind ${esc(r.name.split(' ')[0])}
+                </button>
+              `).join('')}</div>` : ''}
             </div>
-          `).join('')}
-        </div>
-        <div class="detail-section detail-full">
-          <h3>Activity</h3>
-          ${env.auditLog.length === 0 ? '<p style="color:var(--ink3);font-size:13px;">No activity yet.</p>' : env.auditLog.map(a => `
-            <div class="audit-item">
-              <span class="audit-action">${esc(a.action.replace(/_/g, ' '))}</span>
-              <span class="audit-actor">${esc(a.actor)}</span>
-              ${a.details ? ` <span class="audit-details">${esc(a.details)}</span>` : ''}
-              <span class="audit-time">${fmtDate(a.created_at)}</span>
+            <!-- Actions -->
+            <div class="detail-card">
+              <div class="detail-card-head"><h3>Actions</h3></div>
+              <div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">
+                <button class="btn btn-secondary" style="justify-content:flex-start;font-size:12px" onclick="downloadEnvelope('${env.id}')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download PDF
+                </button>
+                ${env.status === 'completed' ? `<button class="btn btn-secondary" style="justify-content:flex-start;font-size:12px" onclick="downloadCertificate('${env.id}')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                  Download Certificate
+                </button>` : ''}
+                ${env.status === 'sent' ? env.recipients.filter(r => r.status === 'sent' || r.status === 'delivered').map(r => `
+                  <button class="btn btn-secondary" style="justify-content:flex-start;font-size:12px" onclick="copyToClipboard('${location.origin}/sign/${r.token}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                    Copy Link — ${esc(r.name.split(' ')[0])}
+                  </button>
+                `).join('') : ''}
+                ${env.status === 'draft' ? `<button class="btn btn-primary" style="justify-content:flex-start;font-size:12px" onclick="resumeWizard('${env.id}')">Edit &amp; Send</button>` : ''}
+                ${env.status === 'sent' ? `<button class="btn" style="justify-content:flex-start;font-size:12px;color:var(--rose);border:1px solid rgba(139,46,46,.2);border-radius:var(--r);padding:7px 15px" onclick="openVoidModal('${env.id}')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                  Void Document
+                </button>` : ''}
+              </div>
             </div>
-          `).join('')}
+          </div>
         </div>
       </div>
     `;
   } catch (err) { toast(err.message, 'error'); }
 }
 
-document.getElementById('back-to-dashboard').addEventListener('click', () => navigate('dashboard'));
+// Back to dashboard handled inline in detail view
 
 async function deleteEnvelope(id) {
   if (!confirm('Delete this envelope?')) return;
@@ -1040,44 +1097,62 @@ function renderReview() {
   const ccs = wizard.recipients.filter(r => r.role === 'cc');
   const title = document.getElementById('envelope-title').value || 'Untitled Envelope';
   const message = document.getElementById('envelope-message').value;
+  const firstSigner = signers[0];
+  const senderName = currentUser ? currentUser.name : 'You';
 
   document.getElementById('review-summary').innerHTML = `
-    <div class="review-card">
-      <div class="review-header">
-        <h4>${esc(title)}</h4>
-        ${message ? `<p class="review-message">${esc(message)}</p>` : ''}
-      </div>
-      <div class="review-section">
-        <div class="review-section-title">Documents (${wizard.documents.length})</div>
-        ${wizard.documents.map(d => `
-          <div class="review-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
-            <span style="font-weight:500;">${esc(d.title || d.filename)}</span>
-            <span style="color:var(--ink4);font-size:12px;">${d.page_count} page${d.page_count !== 1 ? 's' : ''}</span>
+    <div class="review-layout">
+      <div>
+        <!-- Recipients & Signing Order -->
+        <div class="detail-card" style="margin-bottom:16px">
+          <div class="detail-card-head"><div style="display:flex;align-items:center;gap:8px"><div class="step-badge">1</div><h3>Recipients &amp; Signing Order</h3></div></div>
+          <div class="detail-card-body">
+            <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px">
+              ${signers.map((r, i) => `
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border-radius:var(--r);border:1px solid var(--border)">
+                  <div style="width:22px;height:22px;border-radius:50%;background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i + 1}</div>
+                  <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--ink)">${esc(r.name)}</div><div style="font-size:11px;color:var(--ink4)">${esc(r.email)} &middot; Signer ${i + 1}</div></div>
+                </div>
+              `).join('')}
+            </div>
+            ${ccs.length > 0 ? `<div style="font-size:11px;color:var(--ink4);margin-top:8px">CC: ${ccs.map(r => esc(r.name)).join(', ')}</div>` : ''}
           </div>
-        `).join('')}
+        </div>
+        <!-- Message -->
+        <div class="detail-card" style="margin-bottom:16px">
+          <div class="detail-card-head"><div style="display:flex;align-items:center;gap:8px"><div class="step-badge">2</div><h3>Message to Signers</h3></div></div>
+          <div class="detail-card-body">
+            <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:4px">${esc(title)}</div>
+            ${message ? `<div style="font-size:12px;color:var(--ink3);line-height:1.5">${esc(message)}</div>` : '<div style="font-size:12px;color:var(--ink4)">No message added</div>'}
+          </div>
+        </div>
+        <!-- Summary -->
+        <div class="review-summary-stats" style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg)">
+          <div class="review-stat"><strong>${wizard.documents.length}</strong>document${wizard.documents.length !== 1 ? 's' : ''}</div>
+          <div class="review-stat"><strong>${signers.length}</strong>signer${signers.length !== 1 ? 's' : ''}</div>
+          <div class="review-stat"><strong>${wizard.fields.length}</strong>field${wizard.fields.length !== 1 ? 's' : ''}</div>
+        </div>
       </div>
-      <div class="review-section">
-        <div class="review-section-title">Signing Order</div>
-        ${signers.map((r, i) => `
-          <div class="review-signer">
-            <span class="review-order">${i + 1}</span>
-            <span class="signer-color-dot" style="background:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"></span>
-            <div class="review-signer-info">
-              <strong>${esc(r.name)}</strong> &lt;${esc(r.email)}&gt;
-              <span class="review-field-count">${wizard.fields.filter(f => f.recipient_id === r.id).length} fields</span>
+      <!-- Email Preview -->
+      <div class="email-prev">
+        <div class="ep-hdr"><h3>Email Preview</h3></div>
+        <div class="ep-body">
+          <div class="em-logo">
+            <div class="em-logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" style="width:10px;height:10px"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></div>
+            <span class="em-logo-text">Sign</span>
+          </div>
+          <div class="em-subject">You have a document to sign</div>
+          <div class="em-greeting">Hi ${firstSigner ? esc(firstSigner.name.split(' ')[0]) : 'there'},<br><br>${esc(senderName)} has sent you a document to review and sign.</div>
+          <div class="em-doc-block">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+            <div>
+              <div style="font-size:12px;font-weight:500;color:var(--ink)">${esc(title)}</div>
+              <div style="font-size:10px;color:var(--ink4)">${wizard.documents.reduce((s,d) => s + (d.page_count||0), 0)} pages &middot; ${wizard.fields.length} fields to complete</div>
             </div>
           </div>
-        `).join('')}
-        ${ccs.length > 0 ? `
-          <div class="review-section-title" style="margin-top:16px;">CC Recipients</div>
-          ${ccs.map(r => `<div class="review-item" style="padding:6px 0;">${esc(r.name)} &lt;${esc(r.email)}&gt;</div>`).join('')}
-        ` : ''}
-      </div>
-      <div class="review-summary-stats">
-        <div class="review-stat"><strong>${wizard.documents.length}</strong>document${wizard.documents.length !== 1 ? 's' : ''}</div>
-        <div class="review-stat"><strong>${signers.length}</strong>signer${signers.length !== 1 ? 's' : ''}</div>
-        <div class="review-stat"><strong>${wizard.fields.length}</strong>field${wizard.fields.length !== 1 ? 's' : ''}</div>
+          <div class="em-cta">Review &amp; Sign Document &rarr;</div>
+          <div class="em-footer">Sent securely via Sign</div>
+        </div>
       </div>
     </div>
   `;
@@ -1100,9 +1175,8 @@ document.getElementById('wizard-cancel').addEventListener('click', () => {
 // ==================== Signing View ====================
 async function openSigning(token) {
   signing.token = token;
-  // Hide sidebar for signing view
-  document.getElementById('sidebar').classList.add('hidden');
-  document.getElementById('main-area').style.marginLeft = '0';
+  // Hide topnav for signing view
+  document.getElementById('topnav')?.classList.add('hidden');
 
   try {
     const data = await api(`/api/sign/${token}`);
@@ -1311,7 +1385,7 @@ function initSignatureCanvas() {
   newCanvas.width = newCanvas.offsetWidth || 500;
   newCanvas.height = 160;
   canvasCtx.clearRect(0, 0, newCanvas.width, newCanvas.height);
-  canvasCtx.strokeStyle = '#4A1D96';
+  canvasCtx.strokeStyle = '#1a4a72';
   canvasCtx.lineWidth = 2.5;
   canvasCtx.lineCap = 'round';
   canvasCtx.lineJoin = 'round';
@@ -1635,6 +1709,63 @@ document.getElementById('reset-pw-form').addEventListener('submit', async e => {
     e.target.reset();
   } catch (err) { toast(err.message, 'error'); }
 });
+
+// ==================== Templates View ====================
+async function loadTemplatesView() {
+  try {
+    const envs = await api('/api/envelopes?status=completed');
+    const el = document.getElementById('templates-recent-list');
+    if (envs.length === 0) {
+      el.innerHTML = '<p style="color:var(--ink3);font-size:13px;">No completed envelopes to save as templates yet.</p>';
+      return;
+    }
+    el.innerHTML = envs.slice(0, 3).map(e => `
+      <div style="background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:8px">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--ink)">${esc(e.title)}</div>
+          <div style="font-size:11px;color:var(--ink4);margin-top:2px">Completed ${fmtDateShort(e.completed_at || e.updated_at)}</div>
+        </div>
+        <button class="btn btn-secondary" style="font-size:12px;flex-shrink:0" onclick="toast('Template feature coming soon', 'info')">Save as Template</button>
+      </div>
+    `).join('');
+  } catch (err) { console.error(err); }
+}
+
+// ==================== Reports View ====================
+async function loadReportsView() {
+  try {
+    const stats = currentUser.role === 'admin' ? await api('/api/admin/stats') : null;
+    const envs = await api('/api/envelopes');
+
+    const total = envs.length;
+    const completed = envs.filter(e => e.status === 'completed').length;
+    const sent = envs.filter(e => e.status === 'sent').length;
+    const declined = envs.filter(e => e.status === 'declined' || e.status === 'voided').length;
+    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const inProgress = total > 0 ? Math.round((sent / total) * 100) : 0;
+    const declinedRate = total > 0 ? Math.round((declined / total) * 100) : 0;
+
+    document.getElementById('reports-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Envelopes</div><div class="stat-value">${total}</div></div>
+      <div class="stat-card"><div class="stat-label">Completion Rate</div><div class="stat-value">${rate}%</div></div>
+      <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value">${sent}</div></div>
+      <div class="stat-card"><div class="stat-label">Declined / Voided</div><div class="stat-value" style="color:var(--rose)">${declined}</div></div>
+    `;
+
+    document.getElementById('reports-charts').innerHTML = `
+      <div class="detail-card" style="margin-bottom:16px">
+        <div class="detail-card-head"><h3>Envelope Success Rate</h3></div>
+        <div class="detail-card-body">
+          <div class="rate-cards">
+            <div class="rate-card" style="background:var(--teal-light)"><div class="rate-card-val" style="color:var(--teal)">${rate}%</div><div class="rate-card-lbl" style="color:var(--teal)">Success Rate</div></div>
+            <div class="rate-card" style="background:var(--gold-light)"><div class="rate-card-val" style="color:var(--gold)">${inProgress}%</div><div class="rate-card-lbl" style="color:var(--gold)">In Progress</div></div>
+            <div class="rate-card" style="background:var(--rose-light)"><div class="rate-card-val" style="color:var(--rose)">${declinedRate}%</div><div class="rate-card-lbl" style="color:var(--rose)">Declined / Void</div></div>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) { console.error(err); }
+}
 
 // ==================== Modals ====================
 document.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', () => b.closest('.modal').classList.add('hidden')));
