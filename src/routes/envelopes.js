@@ -135,16 +135,18 @@ router.put('/:id', requireAuth, (req, res) => {
   res.json({ message: 'Envelope updated' });
 });
 
-// Delete envelope (draft only)
+// Delete envelope
 router.delete('/:id', requireAuth, (req, res) => {
   const envelope = db.prepare("SELECT * FROM envelopes WHERE id = ? AND owner_id = ?")
     .get(req.params.id, req.session.userId);
   if (!envelope) return res.status(404).json({ error: 'Envelope not found' });
 
-  // Clean up files
+  // Clean up uploaded files
   const docs = db.prepare('SELECT file_path FROM envelope_documents WHERE envelope_id = ?').all(envelope.id);
-  docs.forEach(d => { if (fs.existsSync(d.file_path)) fs.unlinkSync(d.file_path); });
+  docs.forEach(d => { if (d.file_path && fs.existsSync(d.file_path)) fs.unlinkSync(d.file_path); });
 
+  // Delete related records (audit_log FK lacks ON DELETE CASCADE)
+  db.prepare('DELETE FROM audit_log WHERE envelope_id = ?').run(envelope.id);
   db.prepare('DELETE FROM envelopes WHERE id = ?').run(envelope.id);
   res.json({ message: 'Envelope deleted' });
 });

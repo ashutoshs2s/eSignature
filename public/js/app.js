@@ -322,6 +322,7 @@ async function loadEnvelopes(filter = 'all') {
       const status = e.status || e.envelope_status || 'draft';
       const statusLabel = String(status).charAt(0).toUpperCase() + String(status).slice(1);
       const timeAgo = fmtTimeAgo(e.updated_at);
+      const canDelete = ['draft', 'voided', 'declined', 'completed'].includes(status);
       return `
       <div class="dash-activity-row" onclick="viewEnvelope('${e.id}')">
         <div class="dash-activity-info">
@@ -332,6 +333,9 @@ async function loadEnvelopes(filter = 'all') {
           ${statusIcon(status)}
           ${statusLabel}
         </div>
+        ${canDelete ? `<button class="row-delete-btn" title="Delete" onclick="event.stopPropagation(); deleteEnvelopeFromList('${e.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>` : ''}
         <svg class="dash-activity-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
       </div>`;
     }).join('');
@@ -374,6 +378,7 @@ async function loadAgreements(filter) {
       const statusLabel = String(status).charAt(0).toUpperCase() + String(status).slice(1);
       const dateStr = fmtDateShort(e.updated_at || e.created_at);
       const from = e.sender_name ? `From: ${esc(e.sender_name)}` : (e.recipients_text ? `To: ${esc(e.recipients_text)}` : '');
+      const canDelete = ['draft', 'voided', 'declined', 'completed'].includes(status);
       return `
       <div class="agreements-row" onclick="viewEnvelope('${e.id}')">
         <div>
@@ -387,6 +392,9 @@ async function loadAgreements(filter) {
         <div class="agreements-row-date">${dateStr}</div>
         <div class="agreements-row-actions">
           <button class="agreements-download-btn" onclick="event.stopPropagation(); downloadEnvelope('${e.id}')">Download</button>
+          ${canDelete ? `<button class="row-delete-btn" title="Delete" onclick="event.stopPropagation(); deleteEnvelopeFromList('${e.id}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -586,6 +594,21 @@ async function deleteEnvelope(id) {
     await api(`/api/envelopes/${id}`, { method: 'DELETE' });
     toast('Deleted', 'success');
     navigate('dashboard');
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function deleteEnvelopeFromList(id) {
+  if (!confirm('Delete this document?')) return;
+  try {
+    await api(`/api/envelopes/${id}`, { method: 'DELETE' });
+    toast('Deleted', 'success');
+    // Refresh whichever view is currently visible
+    if (!document.getElementById('agreements-view').classList.contains('hidden')) {
+      loadAgreements();
+    } else {
+      loadEnvelopes();
+      loadDashboardStats();
+    }
   } catch (err) { toast(err.message, 'error'); }
 }
 
