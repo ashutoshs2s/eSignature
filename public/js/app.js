@@ -319,7 +319,8 @@ async function loadEnvelopes(filter = 'all') {
       return;
     }
     el.innerHTML = envs.map(e => {
-      const statusLabel = e.status.charAt(0).toUpperCase() + e.status.slice(1);
+      const status = e.status || 'draft';
+      const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
       const timeAgo = fmtTimeAgo(e.updated_at);
       return `
       <div class="dash-activity-row" onclick="viewEnvelope('${e.id}')">
@@ -328,7 +329,7 @@ async function loadEnvelopes(filter = 'all') {
           <div class="dash-activity-sub">${timeAgo}</div>
         </div>
         <div class="dash-activity-status">
-          ${statusIcon(e.status)}
+          ${statusIcon(status)}
           ${statusLabel}
         </div>
         <svg class="dash-activity-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
@@ -369,8 +370,9 @@ async function loadAgreements(filter) {
       return;
     }
     el.innerHTML = envs.map(e => {
-      const statusLabel = e.status.charAt(0).toUpperCase() + e.status.slice(1);
-      const dateStr = fmtDateShort(e.updated_at);
+      const status = e.status || e.envelope_status || 'draft';
+      const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+      const dateStr = fmtDateShort(e.updated_at || e.created_at);
       const from = e.sender_name ? `From: ${esc(e.sender_name)}` : (e.recipients_text ? `To: ${esc(e.recipients_text)}` : '');
       return `
       <div class="agreements-row" onclick="viewEnvelope('${e.id}')">
@@ -379,7 +381,7 @@ async function loadAgreements(filter) {
           <div class="agreements-row-from">${from}</div>
         </div>
         <div class="agreements-row-status">
-          ${statusIcon(e.status)}
+          ${statusIcon(status)}
           ${statusLabel}
         </div>
         <div class="agreements-row-date">${dateStr}</div>
