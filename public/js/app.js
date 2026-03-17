@@ -397,10 +397,6 @@ function filterAgreements(filter) {
   loadAgreements(filter);
 }
 
-function downloadEnvelope(id) {
-  window.open(`/api/envelopes/${id}/download`, '_blank');
-}
-
 document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
   b.classList.add('active');
@@ -477,8 +473,6 @@ async function viewEnvelope(id) {
   try {
     const env = await api(`/api/envelopes/${id}`);
     showView('envelope-detail-view');
-    const detailTopbarTitle = document.getElementById('detail-topbar-title');
-    if (detailTopbarTitle) detailTopbarTitle.innerHTML = `${esc(env.title)} <span class="status-badge status-${env.status}" style="margin-left:8px">${env.status}</span>`;
     const el = document.getElementById('envelope-detail');
 
     const totalFields = env.fields ? env.fields.length : 0;
