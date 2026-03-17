@@ -676,7 +676,8 @@ async function renderFieldEditor() {
   if (signers.length > 0) wizard.selectedRecipient = signers[0].id;
 
   const canvasArea = document.querySelector('.field-canvas-area');
-  const availableWidth = Math.min(canvasArea.clientWidth - 48, 900);
+  const availableWidth = Math.min(canvasArea.clientWidth - 48, 900) || 800;
+  const dpr = window.devicePixelRatio || 1;
 
   container.innerHTML = '';
   const globalListeners = [];
@@ -689,6 +690,7 @@ async function renderFieldEditor() {
         const unscaledViewport = page.getViewport({ scale: 1 });
         const scale = availableWidth / unscaledViewport.width;
         const viewport = page.getViewport({ scale });
+        const hiResViewport = page.getViewport({ scale: scale * dpr });
 
         const wrapper = document.createElement('div');
         wrapper.className = 'pdf-page-wrapper';
@@ -698,10 +700,12 @@ async function renderFieldEditor() {
         wrapper.style.height = viewport.height + 'px';
 
         const canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        canvas.width = hiResViewport.width;
+        canvas.height = hiResViewport.height;
+        canvas.style.width = viewport.width + 'px';
+        canvas.style.height = viewport.height + 'px';
         const ctx = canvas.getContext('2d');
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        await page.render({ canvasContext: ctx, viewport: hiResViewport }).promise;
         wrapper.appendChild(canvas);
 
         const label = document.createElement('div');
@@ -1000,8 +1004,8 @@ async function openSigning(token) {
       <div class="signing-sender">from ${esc(data.sender_name)}</div>
     `;
 
-    await renderSigningView();
     showView('signing-view');
+    await renderSigningView();
   } catch (err) {
     showView('signing-done-view');
     document.getElementById('done-title').textContent = 'Cannot Sign';
@@ -1024,8 +1028,8 @@ document.getElementById('access-code-form').addEventListener('submit', async e =
     signing.data = await api(`/api/sign/${signing.token}?access_code=${encodeURIComponent(e.target.code.value)}`);
     signing.filledFields = new Set();
     document.getElementById('signing-info').innerHTML = `<div class="signing-title">${esc(signing.data.envelope_title)}</div>`;
-    await renderSigningView();
     showView('signing-view');
+    await renderSigningView();
   } catch (err) { document.getElementById('access-code-error').textContent = err.message; }
 });
 
@@ -1034,7 +1038,8 @@ async function renderSigningView() {
   container.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>Loading document...</p></div>';
 
   const wrapperEl = document.querySelector('.signing-body-wrapper');
-  const availableWidth = Math.min(wrapperEl.clientWidth - 48, 800);
+  const availableWidth = Math.min(wrapperEl.clientWidth - 48, 900) || 800;
+  const dpr = window.devicePixelRatio || 1;
 
   container.innerHTML = '';
 
@@ -1046,6 +1051,7 @@ async function renderSigningView() {
         const unscaledViewport = page.getViewport({ scale: 1 });
         const scale = availableWidth / unscaledViewport.width;
         const viewport = page.getViewport({ scale });
+        const hiResViewport = page.getViewport({ scale: scale * dpr });
 
         const wrapper = document.createElement('div');
         wrapper.className = 'pdf-page-wrapper signing-page';
@@ -1053,9 +1059,11 @@ async function renderSigningView() {
         wrapper.style.height = viewport.height + 'px';
 
         const canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        canvas.width = hiResViewport.width;
+        canvas.height = hiResViewport.height;
+        canvas.style.width = viewport.width + 'px';
+        canvas.style.height = viewport.height + 'px';
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport: hiResViewport }).promise;
         wrapper.appendChild(canvas);
 
         // Completed fields from other signers
