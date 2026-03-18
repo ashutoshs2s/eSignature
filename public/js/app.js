@@ -2,10 +2,19 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 // Global error handler to show exact error location
-window.onerror = function(msg, src, line, col) {
-  console.error(`Error at ${src}:${line}:${col} — ${msg}`);
-  if (typeof toast === 'function') toast(`JS Error line ${line}: ${msg}`, 'error');
-};
+window.addEventListener('error', function(e) {
+  const msg = e.message || 'Unknown error';
+  const src = e.filename || '';
+  const line = e.lineno || 0;
+  const col = e.colno || 0;
+  console.error('ERROR at ' + src + ':' + line + ':' + col + ' — ' + msg);
+  // Show a visible alert box so the user can report the exact line
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;z-index:99999;background:#fee;border:2px solid red;padding:16px;font-size:14px;font-family:monospace;border-radius:8px;color:#900;';
+  d.innerHTML = '<b>JS Error</b><br>File: ' + src.split('/').pop() + '<br>Line: ' + line + ', Col: ' + col + '<br>Message: ' + msg + '<br><br><small>Click to dismiss</small>';
+  d.onclick = function() { d.remove(); };
+  document.body.appendChild(d);
+});
 
 // Safe helper: getElementById that never returns null (prevents innerHTML crashes)
 const _dummyEl = document.createElement('div');
