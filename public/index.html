@@ -94,15 +94,15 @@
                 <button class="tab" data-tab="register">Create Account</button>
               </div>
               <form id="login-form" class="auth-form" novalidate>
-                <input type="text" name="email" placeholder="Email address" required>
-                <input type="password" name="password" placeholder="Password" required>
+                <input type="text" name="email" placeholder="Email address" required autocomplete="email">
+                <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
                 <button type="submit" class="btn btn-primary btn-full" style="height:42px;font-size:14px;border-radius:var(--r)">Sign In</button>
                 <div class="form-error" id="login-error"></div>
               </form>
               <form id="register-form" class="auth-form hidden" novalidate>
-                <input type="text" name="name" placeholder="Full name" required>
-                <input type="text" name="email" placeholder="Email address" required>
-                <input type="password" name="password" placeholder="Password (min 6 characters)" required>
+                <input type="text" name="name" placeholder="Full name" required autocomplete="name">
+                <input type="text" name="email" placeholder="Email address" required autocomplete="email">
+                <input type="password" name="password" placeholder="Password (min 6 characters)" required autocomplete="new-password">
                 <button type="submit" class="btn btn-primary btn-full" style="height:42px;font-size:14px;border-radius:var(--r)">Create Account</button>
                 <div class="form-error" id="register-error"></div>
               </form>
@@ -306,8 +306,8 @@
               <div id="recipients-list" class="recipients-list"></div>
               <div class="add-recipient-form">
                 <div class="add-recipient-row">
-                  <input type="text" id="new-recipient-name" placeholder="Full name">
-                  <input type="email" id="new-recipient-email" placeholder="Email address">
+                  <input type="text" id="new-recipient-name" placeholder="Full name" autocomplete="off">
+                  <input type="email" id="new-recipient-email" placeholder="Email address" autocomplete="off">
                   <select id="new-recipient-role" class="select-input" style="max-width:160px">
                     <option value="signer">Needs to Sign</option>
                     <option value="cc">Receives a Copy</option>
@@ -441,7 +441,7 @@
           <h2 style="font-size:20px;margin-bottom:8px;">Enter Access Code</h2>
           <p class="text-muted" id="access-code-label" style="margin-bottom:20px"></p>
           <form id="access-code-form" style="max-width:340px;width:100%;">
-            <input type="text" name="code" placeholder="Enter the code provided by the sender" required class="input-lg" style="margin-bottom:12px;">
+            <input type="text" name="code" placeholder="Enter the code provided by the sender" required class="input-lg" style="margin-bottom:12px;" autocomplete="off">
             <button type="submit" class="btn btn-primary btn-full" style="height:42px">Verify</button>
             <div class="form-error" id="access-code-error"></div>
           </form>
@@ -573,8 +573,8 @@
         </div>
         <form id="invite-form">
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <input type="text" name="name" placeholder="Full Name" required class="input-lg">
-            <input type="email" name="email" placeholder="Email" required class="input-lg">
+            <input type="text" name="name" placeholder="Full Name" required class="input-lg" autocomplete="off">
+            <input type="email" name="email" placeholder="Email" required class="input-lg" autocomplete="off">
             <select name="role" class="select-input"><option value="user">User</option><option value="admin">Admin</option></select>
             <button type="submit" class="btn btn-primary btn-full">Send Invitation</button>
           </div>
@@ -591,7 +591,7 @@
         <form id="reset-pw-form">
           <input type="hidden" name="user_id" id="reset-pw-user-id">
           <p id="reset-pw-user-label" style="margin-bottom:12px;color:var(--ink3);font-size:14px;"></p>
-          <input type="password" name="password" placeholder="New password (min 6 chars)" required minlength="6" class="input-lg">
+          <input type="password" name="password" placeholder="New password (min 6 chars)" required minlength="6" class="input-lg" autocomplete="new-password">
           <button type="submit" class="btn btn-primary btn-full" style="margin-top:12px;">Reset Password</button>
         </form>
       </div>
@@ -614,7 +614,7 @@
           <button class="btn btn-sm btn-secondary" id="clear-canvas" style="margin-top:8px;">Clear</button>
         </div>
         <div id="sig-type-panel" class="sig-panel hidden">
-          <input type="text" id="typed-signature" placeholder="Type your full name" class="input-lg">
+          <input type="text" id="typed-signature" placeholder="Type your full name" class="input-lg" autocomplete="off">
           <div class="sig-font-picker" id="sig-font-picker"></div>
           <div id="typed-preview" class="typed-preview"></div>
         </div>
@@ -653,8 +653,8 @@
         </p>
         <form id="change-pw-form">
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <input type="password" name="new_password" placeholder="New password (min 6 characters)" required minlength="6" class="input-lg">
-            <input type="password" name="confirm_password" placeholder="Confirm new password" required minlength="6" class="input-lg">
+            <input type="password" name="new_password" placeholder="New password (min 6 characters)" required minlength="6" class="input-lg" autocomplete="new-password">
+            <input type="password" name="confirm_password" placeholder="Confirm new password" required minlength="6" class="input-lg" autocomplete="new-password">
             <div class="form-error" id="change-pw-error"></div>
             <button type="submit" class="btn btn-primary btn-full">Set New Password</button>
           </div>
