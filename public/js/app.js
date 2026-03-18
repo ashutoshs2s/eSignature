@@ -16,11 +16,16 @@ window.addEventListener('error', function(e) {
   document.body.appendChild(d);
 });
 
-// Safe helper: getElementById that never returns null (prevents innerHTML crashes)
+// Safe helpers: never return null (prevents innerHTML/classList crashes)
 const _dummyEl = document.createElement('div');
 function $id(id) {
   const el = document.getElementById(id);
   if (!el) { console.warn('Element not found: #' + id); return _dummyEl; }
+  return el;
+}
+function $q(sel) {
+  const el = document.querySelector(sel);
+  if (!el) { console.warn('Selector not found: ' + sel); return _dummyEl; }
   return el;
 }
 
@@ -106,7 +111,7 @@ function hideModal(id) { $id(id)?.classList.add('hidden'); }
 function navigate(view) {
   // Update top nav active state
   document.querySelectorAll('.topnav-link').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.topnav-link[data-view="${view}"]`)?.classList.add('active');
+  $q(`.topnav-link[data-view="${view}"]`).classList.add('active');
   // Close avatar dropdown
   $id('topnav-dropdown')?.classList.add('hidden');
 
@@ -157,11 +162,11 @@ async function checkSetup() {
   try {
     const { needs_setup } = await api('/api/auth/setup-status');
     if (needs_setup) {
-      document.querySelector('[data-tab="register"]').textContent = 'Setup';
-      document.querySelector('#register-form button[type="submit"]').textContent = 'Create Admin Account';
+      $q('[data-tab="register"]').textContent = 'Setup';
+      $q('#register-form button[type="submit"]').textContent = 'Create Admin Account';
     } else if (!inviteToken) {
-      document.querySelector('[data-tab="register"]')?.classList.add('hidden');
-      document.querySelector('.tab-bar')?.classList.add('hidden');
+      $q('[data-tab="register"]').classList.add('hidden');
+      $q('.tab-bar').classList.add('hidden');
       $id('invite-notice')?.classList.remove('hidden');
     }
   } catch {}
@@ -373,7 +378,7 @@ async function loadAgreements(filter) {
     currentAgreementFilter = filter;
     // Update sidebar active state
     document.querySelectorAll('.agreements-nav-item').forEach(i => i.classList.remove('active'));
-    document.querySelector(`.agreements-nav-item[data-agreement-filter="${filter}"]`)?.classList.add('active');
+    $q(`.agreements-nav-item[data-agreement-filter="${filter}"]`).classList.add('active');
   }
   const titleMap = { inbox: 'Inbox', sent: 'Sent', completed: 'Completed', action_required: 'Action Required' };
   $id('agreements-page-title').textContent = titleMap[currentAgreementFilter] || 'Inbox';
@@ -918,7 +923,7 @@ async function renderFieldEditor() {
   `).join('');
   if (signers.length > 0) wizard.selectedRecipient = signers[0].id;
 
-  const canvasArea = document.querySelector('.field-canvas-area');
+  const canvasArea = $q('.field-canvas-area');
   const availableWidth = Math.min(canvasArea.clientWidth - 48, 900) || 800;
   const dpr = window.devicePixelRatio || 1;
 
@@ -1278,9 +1283,9 @@ async function openSigning(token) {
     showView('signing-done-view');
     $id('done-title').textContent = 'Cannot Sign';
     $id('done-message').textContent = err.message;
-    document.querySelector('.done-icon').textContent = '!';
-    document.querySelector('.done-icon').style.background = '#8b2e2e';
-    document.querySelector('.done-icon').style.color = '#fff';
+    $q('.done-icon').textContent = '!';
+    $q('.done-icon').style.background = '#8b2e2e';
+    $q('.done-icon').style.color = '#fff';
   }
 }
 
@@ -1305,7 +1310,7 @@ async function renderSigningView() {
   const container = $id('signing-pdf-container');
   container.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>Loading document...</p></div>';
 
-  const wrapperEl = document.querySelector('.signing-body-wrapper');
+  const wrapperEl = $q('.signing-body-wrapper');
   const availableWidth = Math.min(wrapperEl.clientWidth - 48, 900) || 800;
   const dpr = window.devicePixelRatio || 1;
 
@@ -1617,9 +1622,9 @@ $id('finish-signing-btn').addEventListener('click', async () => {
     showView('signing-done-view');
     $id('done-title').textContent = 'Document Signed!';
     $id('done-message').textContent = 'Thank you. The document owner will be notified.';
-    document.querySelector('.done-icon').textContent = '\u2713';
-    document.querySelector('.done-icon').style.background = '#0a6b5c';
-    document.querySelector('.done-icon').style.color = '#fff';
+    $q('.done-icon').textContent = '\u2713';
+    $q('.done-icon').style.background = '#0a6b5c';
+    $q('.done-icon').style.color = '#fff';
     // Summary
     const summary = $id('done-summary');
     if (summary && signing.data) {
@@ -1657,9 +1662,9 @@ $id('confirm-decline-btn').addEventListener('click', async () => {
     showView('signing-done-view');
     $id('done-title').textContent = 'Signing Declined';
     $id('done-message').textContent = 'The document owner has been notified.';
-    document.querySelector('.done-icon').textContent = '\u2717';
-    document.querySelector('.done-icon').style.background = '#8b2e2e';
-    document.querySelector('.done-icon').style.color = '#fff';
+    $q('.done-icon').textContent = '\u2717';
+    $q('.done-icon').style.background = '#8b2e2e';
+    $q('.done-icon').style.color = '#fff';
   } catch (err) { toast(err.message, 'error'); }
 });
 
@@ -1908,9 +1913,9 @@ async function handleInvite(token) {
     inviteToken = token;
     showView('auth-view');
     document.querySelectorAll('.tab-bar .tab').forEach(t => t.classList.remove('active'));
-    document.querySelector('[data-tab="register"]').classList.add('active');
-    document.querySelector('[data-tab="register"]').classList.remove('hidden');
-    document.querySelector('.tab-bar').classList.remove('hidden');
+    $q('[data-tab="register"]').classList.add('active');
+    $q('[data-tab="register"]').classList.remove('hidden');
+    $q('.tab-bar').classList.remove('hidden');
     $id('login-form').classList.add('hidden');
     $id('register-form').classList.remove('hidden');
     $id('invite-notice')?.classList.add('hidden');
@@ -1918,7 +1923,7 @@ async function handleInvite(token) {
     form.name.value = inv.name;
     form.email.value = inv.email;
     form.email.readOnly = true;
-    document.querySelector('#register-form button[type="submit"]').textContent = 'Accept Invitation';
+    $q('#register-form button[type="submit"]').textContent = 'Accept Invitation';
   } catch {
     toast('Invalid or expired invitation', 'error');
     showView('auth-view');
