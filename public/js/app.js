@@ -1,6 +1,20 @@
 /* global pdfjsLib */
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+// Global error handler to show exact error location
+window.onerror = function(msg, src, line, col) {
+  console.error(`Error at ${src}:${line}:${col} — ${msg}`);
+  if (typeof toast === 'function') toast(`JS Error line ${line}: ${msg}`, 'error');
+};
+
+// Safe helper: getElementById that never returns null (prevents innerHTML crashes)
+const _dummyEl = document.createElement('div');
+function $id(id) {
+  const el = $id(id);
+  if (!el) { console.warn('Element not found: #' + id); return _dummyEl; }
+  return el;
+}
+
 // ==================== State ====================
 let currentUser = null;
 let inviteToken = null;
@@ -74,18 +88,18 @@ function getInitials(name) {
 
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-  document.getElementById(id)?.classList.remove('hidden');
+  $id(id)?.classList.remove('hidden');
 }
 
-function showModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
-function hideModal(id) { document.getElementById(id)?.classList.add('hidden'); }
+function showModal(id) { $id(id)?.classList.remove('hidden'); }
+function hideModal(id) { $id(id)?.classList.add('hidden'); }
 
 function navigate(view) {
   // Update top nav active state
   document.querySelectorAll('.topnav-link').forEach(b => b.classList.remove('active'));
   document.querySelector(`.topnav-link[data-view="${view}"]`)?.classList.add('active');
   // Close avatar dropdown
-  document.getElementById('topnav-dropdown')?.classList.add('hidden');
+  $id('topnav-dropdown')?.classList.add('hidden');
 
   if (view === 'dashboard') { showView('dashboard-view'); loadEnvelopes(); loadDashboardStats(); }
   else if (view === 'agreements') { showView('agreements-view'); loadAgreements(); }
@@ -139,7 +153,7 @@ async function checkSetup() {
     } else if (!inviteToken) {
       document.querySelector('[data-tab="register"]')?.classList.add('hidden');
       document.querySelector('.tab-bar')?.classList.add('hidden');
-      document.getElementById('invite-notice')?.classList.remove('hidden');
+      $id('invite-notice')?.classList.remove('hidden');
     }
   } catch {}
 
@@ -147,23 +161,23 @@ async function checkSetup() {
   try {
     const oauth = await api('/api/auth/oauth-config');
     if (oauth.google || oauth.apple) {
-      document.getElementById('social-login-section')?.classList.remove('hidden');
-      if (!oauth.google) document.getElementById('google-login-btn')?.classList.add('hidden');
-      if (!oauth.apple) document.getElementById('apple-login-btn')?.classList.add('hidden');
-      else document.getElementById('apple-login-btn')?.classList.remove('hidden');
+      $id('social-login-section')?.classList.remove('hidden');
+      if (!oauth.google) $id('google-login-btn')?.classList.add('hidden');
+      if (!oauth.apple) $id('apple-login-btn')?.classList.add('hidden');
+      else $id('apple-login-btn')?.classList.remove('hidden');
     }
   } catch {}
 }
 
 function showApp() {
   // Show top nav
-  document.getElementById('topnav').classList.remove('hidden');
-  document.getElementById('main-area').style.marginLeft = '0';
+  $id('topnav').classList.remove('hidden');
+  $id('main-area').style.marginLeft = '0';
 
   // Set user info in top nav
-  document.getElementById('topnav-initials').textContent = getInitials(currentUser.name);
-  document.getElementById('topnav-user-name').textContent = currentUser.name;
-  const welcome = document.getElementById('dash-welcome');
+  $id('topnav-initials').textContent = getInitials(currentUser.name);
+  $id('topnav-user-name').textContent = currentUser.name;
+  const welcome = $id('dash-welcome');
   if (welcome) welcome.textContent = `Welcome back, ${currentUser.name}`;
 
   // Show admin nav if admin
@@ -176,15 +190,15 @@ function showApp() {
 document.querySelectorAll('.tab-bar .tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.tab-bar .tab').forEach(x => x.classList.remove('active'));
   t.classList.add('active');
-  document.getElementById('login-form').classList.toggle('hidden', t.dataset.tab !== 'login');
-  document.getElementById('register-form').classList.toggle('hidden', t.dataset.tab !== 'register');
+  $id('login-form').classList.toggle('hidden', t.dataset.tab !== 'login');
+  $id('register-form').classList.toggle('hidden', t.dataset.tab !== 'register');
 }));
 
 // Login
-document.getElementById('login-form').addEventListener('submit', async e => {
+$id('login-form').addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target;
-  document.getElementById('login-error').textContent = '';
+  $id('login-error').textContent = '';
   try {
     currentUser = await api('/api/auth/login', {
       method: 'POST',
@@ -196,15 +210,15 @@ document.getElementById('login-form').addEventListener('submit', async e => {
     }
     showApp();
   } catch (err) {
-    document.getElementById('login-error').textContent = err.message;
+    $id('login-error').textContent = err.message;
   }
 });
 
 // Force password change
-document.getElementById('change-pw-form').addEventListener('submit', async e => {
+$id('change-pw-form').addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target;
-  const errEl = document.getElementById('change-pw-error');
+  const errEl = $id('change-pw-error');
   errEl.textContent = '';
   const newPw = f.new_password.value;
   const confirmPw = f.confirm_password.value;
@@ -220,10 +234,10 @@ document.getElementById('change-pw-form').addEventListener('submit', async e => 
 });
 
 // Register
-document.getElementById('register-form').addEventListener('submit', async e => {
+$id('register-form').addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target;
-  document.getElementById('register-error').textContent = '';
+  $id('register-error').textContent = '';
   try {
     const body = { name: f.name.value, email: f.email.value, password: f.password.value };
     if (inviteToken) body.invite_token = inviteToken;
@@ -231,32 +245,32 @@ document.getElementById('register-form').addEventListener('submit', async e => {
     if (inviteToken) { history.replaceState({}, '', '/'); inviteToken = null; }
     showApp();
   } catch (err) {
-    document.getElementById('register-error').textContent = err.message;
+    $id('register-error').textContent = err.message;
   }
 });
 
-document.getElementById('logout-btn').addEventListener('click', async () => {
+$id('logout-btn').addEventListener('click', async () => {
   await api('/api/auth/logout', { method: 'POST' });
   currentUser = null;
-  document.getElementById('topnav')?.classList.add('hidden');
+  $id('topnav')?.classList.add('hidden');
   showView('auth-view');
 });
 
 // New envelope button
-document.getElementById('new-envelope-btn').addEventListener('click', startWizard);
+$id('new-envelope-btn').addEventListener('click', startWizard);
 
 // Agreements page: Start Now button
-document.getElementById('agreements-new-btn')?.addEventListener('click', startWizard);
+$id('agreements-new-btn')?.addEventListener('click', startWizard);
 
 // Agreements page: search
-document.getElementById('agreements-search-input')?.addEventListener('input', () => {
+$id('agreements-search-input')?.addEventListener('input', () => {
   loadAgreements();
 });
 
 // Close dropdown when clicking outside
 document.addEventListener('click', (e) => {
-  const dropdown = document.getElementById('topnav-dropdown');
-  const avatar = document.getElementById('topnav-avatar');
+  const dropdown = $id('topnav-dropdown');
+  const avatar = $id('topnav-avatar');
   if (dropdown && !dropdown.contains(e.target) && !avatar?.contains(e.target)) {
     dropdown.classList.add('hidden');
   }
@@ -271,7 +285,7 @@ async function loadDashboardStats() {
     const draft = envs.filter(e => e.status === 'draft').length;
     const declined = envs.filter(e => e.status === 'declined').length;
 
-    document.getElementById('dashboard-stats').innerHTML = `
+    $id('dashboard-stats').innerHTML = `
       <div class="dash-stat-row"><span class="dash-stat-label">Waiting for others</span><span class="dash-stat-value">${sent}</span></div>
       <div class="dash-stat-row"><span class="dash-stat-label">Drafts</span><span class="dash-stat-value">${draft}</span></div>
       <div class="dash-stat-row"><span class="dash-stat-label">Completed</span><span class="dash-stat-value">${completed}</span></div>
@@ -309,7 +323,7 @@ async function loadEnvelopes(filter = 'all') {
   try {
     const url = filter === 'all' ? '/api/envelopes' : `/api/envelopes?status=${filter}`;
     const envs = await api(url);
-    const el = document.getElementById('envelopes-list');
+    const el = $id('envelopes-list');
     if (envs.length === 0) {
       el.innerHTML = `
         <div class="dash-tasks-empty">
@@ -353,7 +367,7 @@ async function loadAgreements(filter) {
     document.querySelector(`.agreements-nav-item[data-agreement-filter="${filter}"]`)?.classList.add('active');
   }
   const titleMap = { inbox: 'Inbox', sent: 'Sent', completed: 'Completed', action_required: 'Action Required' };
-  document.getElementById('agreements-page-title').textContent = titleMap[currentAgreementFilter] || 'Inbox';
+  $id('agreements-page-title').textContent = titleMap[currentAgreementFilter] || 'Inbox';
 
   try {
     let envs;
@@ -363,12 +377,12 @@ async function loadAgreements(filter) {
       envs = await api(`/api/envelopes?status=${currentAgreementFilter}`);
     }
 
-    const searchVal = (document.getElementById('agreements-search-input')?.value || '').toLowerCase();
+    const searchVal = ($id('agreements-search-input')?.value || '').toLowerCase();
     if (searchVal) {
       envs = envs.filter(e => (e.title || '').toLowerCase().includes(searchVal));
     }
 
-    const el = document.getElementById('agreements-list');
+    const el = $id('agreements-list');
     if (envs.length === 0) {
       el.innerHTML = `<div class="empty-state" style="padding:48px 20px"><p>No documents found</p></div>`;
       return;
@@ -415,7 +429,7 @@ document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click'
 async function loadInbox() {
   try {
     const items = await api('/api/envelopes/inbox');
-    const el = document.getElementById('inbox-list');
+    const el = $id('inbox-list');
     if (items.length === 0) {
       el.innerHTML = `
         <div class="empty-state">
@@ -481,7 +495,7 @@ async function viewEnvelope(id) {
   try {
     const env = await api(`/api/envelopes/${id}`);
     showView('envelope-detail-view');
-    const el = document.getElementById('envelope-detail');
+    const el = $id('envelope-detail');
     if (!el) { toast('View not found. Please refresh the page.', 'error'); return; }
 
     // Ensure arrays exist even if API response is incomplete
@@ -610,7 +624,7 @@ async function deleteEnvelopeFromList(id) {
     await api(`/api/envelopes/${id}`, { method: 'DELETE' });
     toast('Deleted', 'success');
     // Refresh whichever view is currently visible
-    if (!document.getElementById('agreements-view').classList.contains('hidden')) {
+    if (!$id('agreements-view').classList.contains('hidden')) {
       loadAgreements();
     } else {
       loadEnvelopes();
@@ -636,15 +650,15 @@ async function resendReminder(envId, rid) {
 // Void
 function openVoidModal(id) {
   currentEnvelopeId = id;
-  document.getElementById('void-reason').value = '';
+  $id('void-reason').value = '';
   showModal('void-modal');
 }
 
-document.getElementById('confirm-void-btn').addEventListener('click', async () => {
+$id('confirm-void-btn').addEventListener('click', async () => {
   try {
     await api(`/api/envelopes/${currentEnvelopeId}/void`, {
       method: 'POST',
-      body: JSON.stringify({ reason: document.getElementById('void-reason').value })
+      body: JSON.stringify({ reason: $id('void-reason').value })
     });
     hideModal('void-modal');
     toast('Envelope voided', 'success');
@@ -663,10 +677,10 @@ async function startWizard() {
     wizard.fields = [];
     wizard.selectedRecipient = null;
     wizard.selectedFieldType = null;
-    document.getElementById('envelope-title').value = '';
-    document.getElementById('envelope-message').value = '';
-    document.getElementById('wizard-doc-list').innerHTML = '';
-    document.getElementById('wizard-next-1').disabled = true;
+    $id('envelope-title').value = '';
+    $id('envelope-message').value = '';
+    $id('wizard-doc-list').innerHTML = '';
+    $id('wizard-next-1').disabled = true;
     setWizardStep(1);
     showView('wizard-view');
   } catch (err) { toast(err.message, 'error'); }
@@ -681,10 +695,10 @@ async function resumeWizard(id) {
     wizard.fields = env.fields;
     wizard.step = 1;
     wizard.selectedRecipient = null;
-    document.getElementById('envelope-title').value = env.title;
-    document.getElementById('envelope-message').value = env.message || '';
+    $id('envelope-title').value = env.title;
+    $id('envelope-message').value = env.message || '';
     renderWizardDocs();
-    document.getElementById('wizard-next-1').disabled = wizard.documents.length === 0;
+    $id('wizard-next-1').disabled = wizard.documents.length === 0;
     setWizardStep(1);
     showView('wizard-view');
   } catch (err) { toast(err.message, 'error'); }
@@ -711,22 +725,22 @@ function setWizardStep(step) {
 }
 
 // Step 1: Upload
-document.getElementById('wizard-file-input').addEventListener('change', async (e) => {
+$id('wizard-file-input').addEventListener('change', async (e) => {
   for (const file of e.target.files) {
     await uploadWizardDoc(file);
   }
   e.target.value = '';
 });
 
-document.getElementById('wizard-file-drop').addEventListener('dragover', e => {
+$id('wizard-file-drop').addEventListener('dragover', e => {
   e.preventDefault();
   e.currentTarget.classList.add('drag-over');
 });
-document.getElementById('wizard-file-drop').addEventListener('dragleave', e => {
+$id('wizard-file-drop').addEventListener('dragleave', e => {
   e.currentTarget.classList.remove('drag-over');
 });
 const ALLOWED_EXTENSIONS = /\.(pdf|doc|docx|xls|xlsx|odt|ods)$/i;
-document.getElementById('wizard-file-drop').addEventListener('drop', async e => {
+$id('wizard-file-drop').addEventListener('drop', async e => {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
   for (const file of e.dataTransfer.files) {
@@ -736,15 +750,15 @@ document.getElementById('wizard-file-drop').addEventListener('drop', async e => 
 });
 
 async function uploadWizardDoc(file) {
-  const titleInput = document.getElementById('envelope-title');
+  const titleInput = $id('envelope-title');
   if (!titleInput.value.trim()) {
     titleInput.value = file.name.replace(/\.(pdf|docx?|xlsx?|odt|ods)$/i, '');
   }
   await api(`/api/envelopes/${wizard.envelopeId}`, {
     method: 'PUT',
     body: JSON.stringify({
-      title: document.getElementById('envelope-title').value || 'Untitled Envelope',
-      message: document.getElementById('envelope-message').value
+      title: $id('envelope-title').value || 'Untitled Envelope',
+      message: $id('envelope-message').value
     })
   });
 
@@ -756,7 +770,7 @@ async function uploadWizardDoc(file) {
     if (doc.error) throw new Error(doc.error);
     wizard.documents.push(doc);
     renderWizardDocs();
-    document.getElementById('wizard-next-1').disabled = false;
+    $id('wizard-next-1').disabled = false;
   } catch (err) { toast(err.message, 'error'); }
 }
 
@@ -768,7 +782,7 @@ function fmtFileSize(bytes) {
 }
 
 function renderWizardDocs() {
-  document.getElementById('wizard-doc-list').innerHTML = wizard.documents.map((d, i) => `
+  $id('wizard-doc-list').innerHTML = wizard.documents.map((d, i) => `
     <div class="doc-chip">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
       <div class="doc-chip-info">
@@ -793,26 +807,26 @@ async function removeWizardDoc(idx) {
     wizard.documents.splice(idx, 1);
     wizard.fields = wizard.fields.filter(f => f.document_id !== doc.id);
     renderWizardDocs();
-    document.getElementById('wizard-next-1').disabled = wizard.documents.length === 0;
+    $id('wizard-next-1').disabled = wizard.documents.length === 0;
   } catch (err) { toast(err.message, 'error'); }
 }
 
-document.getElementById('wizard-next-1').addEventListener('click', async () => {
+$id('wizard-next-1').addEventListener('click', async () => {
   await api(`/api/envelopes/${wizard.envelopeId}`, {
     method: 'PUT',
     body: JSON.stringify({
-      title: document.getElementById('envelope-title').value || 'Untitled Envelope',
-      message: document.getElementById('envelope-message').value
+      title: $id('envelope-title').value || 'Untitled Envelope',
+      message: $id('envelope-message').value
     })
   });
   setWizardStep(2);
 });
 
 // Step 2: Recipients
-document.getElementById('add-recipient-btn').addEventListener('click', async () => {
-  const name = document.getElementById('new-recipient-name').value.trim();
-  const email = document.getElementById('new-recipient-email').value.trim();
-  const role = document.getElementById('new-recipient-role').value;
+$id('add-recipient-btn').addEventListener('click', async () => {
+  const name = $id('new-recipient-name').value.trim();
+  const email = $id('new-recipient-email').value.trim();
+  const role = $id('new-recipient-role').value;
   if (!name || !email) { toast('Name and email required', 'error'); return; }
   try {
     const r = await api(`/api/envelopes/${wizard.envelopeId}/recipients`, {
@@ -820,15 +834,15 @@ document.getElementById('add-recipient-btn').addEventListener('click', async () 
       body: JSON.stringify({ name, email, role })
     });
     wizard.recipients.push(r);
-    document.getElementById('new-recipient-name').value = '';
-    document.getElementById('new-recipient-email').value = '';
+    $id('new-recipient-name').value = '';
+    $id('new-recipient-email').value = '';
     renderRecipientsList();
-    document.getElementById('wizard-next-2').disabled = wizard.recipients.filter(x => x.role === 'signer').length === 0;
+    $id('wizard-next-2').disabled = wizard.recipients.filter(x => x.role === 'signer').length === 0;
   } catch (err) { toast(err.message, 'error'); }
 });
 
 function renderRecipientsList() {
-  const el = document.getElementById('recipients-list');
+  const el = $id('recipients-list');
   el.innerHTML = wizard.recipients.map((r, i) => {
     const color = r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length];
     return `
@@ -843,7 +857,7 @@ function renderRecipientsList() {
       <button class="recipient-remove" onclick="removeRecipient(${i})" title="Remove">&times;</button>
     </div>`;
   }).join('');
-  document.getElementById('wizard-next-2').disabled = wizard.recipients.filter(x => x.role === 'signer').length === 0;
+  $id('wizard-next-2').disabled = wizard.recipients.filter(x => x.role === 'signer').length === 0;
 }
 
 async function updateRecipientRole(idx, newRole) {
@@ -868,8 +882,8 @@ async function removeRecipient(idx) {
   } catch (err) { toast(err.message, 'error'); }
 }
 
-document.getElementById('wizard-prev-2').addEventListener('click', () => setWizardStep(1));
-document.getElementById('wizard-next-2').addEventListener('click', () => setWizardStep(3));
+$id('wizard-prev-2').addEventListener('click', () => setWizardStep(1));
+$id('wizard-next-2').addEventListener('click', () => setWizardStep(3));
 
 // ==================== Step 3: Field Editor ====================
 let fieldEditorCleanup = null;
@@ -880,11 +894,11 @@ async function renderFieldEditor() {
     fieldEditorCleanup = null;
   }
 
-  const container = document.getElementById('pdf-pages-container');
+  const container = $id('pdf-pages-container');
   container.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>Loading PDF pages...</p></div>';
 
   const signers = wizard.recipients.filter(r => r.role === 'signer');
-  document.getElementById('field-recipient-selector').innerHTML = signers.map((r, i) => `
+  $id('field-recipient-selector').innerHTML = signers.map((r, i) => `
     <button class="recipient-select-btn ${i === 0 ? 'active' : ''}" data-rid="${r.id}"
             style="border-left-color:${r.color || RECIPIENT_COLORS[i % RECIPIENT_COLORS.length]}"
             onclick="selectFieldRecipient('${r.id}', this)">
@@ -971,7 +985,7 @@ function updateRecipientFieldCounts() {
     const countEl = btn.querySelector('.field-count');
     if (countEl) countEl.textContent = count;
   });
-  const summaryEl = document.getElementById('field-count-summary');
+  const summaryEl = $id('field-count-summary');
   if (summaryEl) {
     summaryEl.innerHTML = `<strong>${wizard.fields.length}</strong> field${wizard.fields.length !== 1 ? 's' : ''} placed`;
   }
@@ -1126,8 +1140,8 @@ function renderPlacedField(wrapper, field, globalListeners) {
   wrapper.appendChild(el);
 }
 
-document.getElementById('wizard-prev-3').addEventListener('click', () => setWizardStep(2));
-document.getElementById('wizard-next-3').addEventListener('click', async () => {
+$id('wizard-prev-3').addEventListener('click', () => setWizardStep(2));
+$id('wizard-next-3').addEventListener('click', async () => {
   if (wizard.fields.length === 0) {
     toast('Place at least one field on the document', 'error');
     return;
@@ -1145,12 +1159,12 @@ document.getElementById('wizard-next-3').addEventListener('click', async () => {
 function renderReview() {
   const signers = wizard.recipients.filter(r => r.role === 'signer');
   const ccs = wizard.recipients.filter(r => r.role === 'cc');
-  const title = document.getElementById('envelope-title').value || 'Untitled Envelope';
-  const message = document.getElementById('envelope-message').value;
+  const title = $id('envelope-title').value || 'Untitled Envelope';
+  const message = $id('envelope-message').value;
   const firstSigner = signers[0];
   const senderName = currentUser ? currentUser.name : 'You';
 
-  document.getElementById('review-summary').innerHTML = `
+  $id('review-summary').innerHTML = `
     <div class="review-layout">
       <div>
         <!-- Recipients & Signing Order -->
@@ -1212,8 +1226,8 @@ function renderReview() {
   `;
 }
 
-document.getElementById('wizard-prev-4').addEventListener('click', () => setWizardStep(3));
-document.getElementById('wizard-send').addEventListener('click', async () => {
+$id('wizard-prev-4').addEventListener('click', () => setWizardStep(3));
+$id('wizard-send').addEventListener('click', async () => {
   try {
     await api(`/api/envelopes/${wizard.envelopeId}/send`, { method: 'POST' });
     toast('Envelope sent successfully!', 'success');
@@ -1222,7 +1236,7 @@ document.getElementById('wizard-send').addEventListener('click', async () => {
   } catch (err) { toast(err.message, 'error'); }
 });
 
-document.getElementById('wizard-cancel').addEventListener('click', () => {
+$id('wizard-cancel').addEventListener('click', () => {
   if (confirm('Discard this envelope?')) navigate('dashboard');
 });
 
@@ -1230,13 +1244,13 @@ document.getElementById('wizard-cancel').addEventListener('click', () => {
 async function openSigning(token) {
   signing.token = token;
   // Hide topnav for signing view
-  document.getElementById('topnav')?.classList.add('hidden');
+  $id('topnav')?.classList.add('hidden');
 
   try {
     const data = await api(`/api/sign/${token}`);
 
     if (data.requires_access_code) {
-      document.getElementById('access-code-label').textContent = `Hi ${data.recipient_name}, please enter the access code to continue.`;
+      $id('access-code-label').textContent = `Hi ${data.recipient_name}, please enter the access code to continue.`;
       showView('access-code-view');
       return;
     }
@@ -1244,7 +1258,7 @@ async function openSigning(token) {
     signing.data = data;
     signing.filledFields = new Set();
 
-    document.getElementById('signing-info').innerHTML = `
+    $id('signing-info').innerHTML = `
       <div class="signing-title">${esc(data.envelope_title)}</div>
       <div class="signing-sender">from ${esc(data.sender_name)}</div>
     `;
@@ -1253,8 +1267,8 @@ async function openSigning(token) {
     await renderSigningView();
   } catch (err) {
     showView('signing-done-view');
-    document.getElementById('done-title').textContent = 'Cannot Sign';
-    document.getElementById('done-message').textContent = err.message;
+    $id('done-title').textContent = 'Cannot Sign';
+    $id('done-message').textContent = err.message;
     document.querySelector('.done-icon').textContent = '!';
     document.querySelector('.done-icon').style.background = '#8b2e2e';
     document.querySelector('.done-icon').style.color = '#fff';
@@ -1262,9 +1276,9 @@ async function openSigning(token) {
 }
 
 // Access code
-document.getElementById('access-code-form').addEventListener('submit', async e => {
+$id('access-code-form').addEventListener('submit', async e => {
   e.preventDefault();
-  document.getElementById('access-code-error').textContent = '';
+  $id('access-code-error').textContent = '';
   try {
     await api(`/api/sign/${signing.token}/verify-code`, {
       method: 'POST',
@@ -1272,14 +1286,14 @@ document.getElementById('access-code-form').addEventListener('submit', async e =
     });
     signing.data = await api(`/api/sign/${signing.token}?access_code=${encodeURIComponent(e.target.code.value)}`);
     signing.filledFields = new Set();
-    document.getElementById('signing-info').innerHTML = `<div class="signing-title">${esc(signing.data.envelope_title)}</div>`;
+    $id('signing-info').innerHTML = `<div class="signing-title">${esc(signing.data.envelope_title)}</div>`;
     showView('signing-view');
     await renderSigningView();
-  } catch (err) { document.getElementById('access-code-error').textContent = err.message; }
+  } catch (err) { $id('access-code-error').textContent = err.message; }
 });
 
 async function renderSigningView() {
-  const container = document.getElementById('signing-pdf-container');
+  const container = $id('signing-pdf-container');
   container.innerHTML = '<div class="loading-indicator"><div class="spinner"></div><p>Loading document...</p></div>';
 
   const wrapperEl = document.querySelector('.signing-body-wrapper');
@@ -1373,7 +1387,7 @@ function getFieldDisplay(f) {
 function handleSigningFieldClick(field, el) {
   if (field.type === 'signature' || field.type === 'initials') {
     signing.currentFieldId = field.id;
-    document.getElementById('sig-modal-title').textContent = field.type === 'signature' ? 'Create your signature' : 'Add Initials';
+    $id('sig-modal-title').textContent = field.type === 'signature' ? 'Create your signature' : 'Add Initials';
     initSignatureCanvas();
     showModal('signature-modal');
   } else if (field.type === 'date_signed') {
@@ -1411,17 +1425,17 @@ function updateSigningProgress() {
   const required = signing.data.fields.filter(f => f.required);
   const filled = required.filter(f => f.value);
   const pct = required.length > 0 ? (filled.length / required.length) * 100 : 0;
-  document.getElementById('signing-progress-fill').style.width = pct + '%';
-  document.getElementById('finish-signing-btn').disabled = filled.length < required.length;
-  const sideBtn = document.getElementById('finish-signing-btn-side');
+  $id('signing-progress-fill').style.width = pct + '%';
+  $id('finish-signing-btn').disabled = filled.length < required.length;
+  const sideBtn = $id('finish-signing-btn-side');
   if (sideBtn) sideBtn.disabled = filled.length < required.length;
 
   // Status pill
-  const pill = document.getElementById('signing-status-pill');
+  const pill = $id('signing-status-pill');
   if (pill) pill.textContent = `${filled.length} of ${required.length} fields`;
 
   // Checklist
-  const checklistEl = document.getElementById('signing-checklist-items');
+  const checklistEl = $id('signing-checklist-items');
   if (checklistEl) {
     checklistEl.innerHTML = signing.data.fields.map(f => {
       const done = f.value ? 'done' : '';
@@ -1453,7 +1467,7 @@ let selectedSigFont = SIG_FONTS[0];
 let canvasCtx = null, isDrawing = false;
 
 function initSignatureCanvas() {
-  const canvas = document.getElementById('signature-canvas');
+  const canvas = $id('signature-canvas');
   const newCanvas = canvas.cloneNode(true);
   canvas.parentNode.replaceChild(newCanvas, canvas);
 
@@ -1466,14 +1480,14 @@ function initSignatureCanvas() {
   canvasCtx.lineCap = 'round';
   canvasCtx.lineJoin = 'round';
 
-  document.getElementById('typed-signature').value = '';
-  document.getElementById('typed-preview').textContent = '';
-  document.getElementById('typed-preview').style.fontFamily = selectedSigFont.family;
+  $id('typed-signature').value = '';
+  $id('typed-preview').textContent = '';
+  $id('typed-preview').style.fontFamily = selectedSigFont.family;
   renderFontPicker();
   signing.signatureMode = 'draw';
   document.querySelectorAll('.sig-tab').forEach(t => t.classList.toggle('active', t.dataset.sig === 'draw'));
-  document.getElementById('sig-draw-panel').classList.remove('hidden');
-  document.getElementById('sig-type-panel').classList.add('hidden');
+  $id('sig-draw-panel').classList.remove('hidden');
+  $id('sig-type-panel').classList.add('hidden');
 
   newCanvas.addEventListener('mousedown', e => {
     isDrawing = true;
@@ -1511,15 +1525,15 @@ function initSignatureCanvas() {
 }
 
 function renderFontPicker() {
-  const picker = document.getElementById('sig-font-picker');
-  const name = document.getElementById('typed-signature').value || 'Your Name';
+  const picker = $id('sig-font-picker');
+  const name = $id('typed-signature').value || 'Your Name';
   picker.innerHTML = SIG_FONTS.map((f, i) =>
     `<div class="sig-font-option${f.name === selectedSigFont.name ? ' active' : ''}" data-font-idx="${i}" style="font-family:${f.family}">${esc(name)}</div>`
   ).join('');
   picker.querySelectorAll('.sig-font-option').forEach(el => {
     el.addEventListener('click', () => {
       selectedSigFont = SIG_FONTS[parseInt(el.dataset.fontIdx)];
-      document.getElementById('typed-preview').style.fontFamily = selectedSigFont.family;
+      $id('typed-preview').style.fontFamily = selectedSigFont.family;
       picker.querySelectorAll('.sig-font-option').forEach(x => x.classList.remove('active'));
       el.classList.add('active');
     });
@@ -1529,28 +1543,28 @@ function renderFontPicker() {
 document.querySelectorAll('.sig-tab').forEach(t => t.addEventListener('click', () => {
   signing.signatureMode = t.dataset.sig;
   document.querySelectorAll('.sig-tab').forEach(x => x.classList.toggle('active', x.dataset.sig === t.dataset.sig));
-  document.getElementById('sig-draw-panel').classList.toggle('hidden', t.dataset.sig !== 'draw');
-  document.getElementById('sig-type-panel').classList.toggle('hidden', t.dataset.sig !== 'type');
+  $id('sig-draw-panel').classList.toggle('hidden', t.dataset.sig !== 'draw');
+  $id('sig-type-panel').classList.toggle('hidden', t.dataset.sig !== 'type');
 }));
 
-document.getElementById('clear-canvas').addEventListener('click', () => {
-  const c = document.getElementById('signature-canvas');
+$id('clear-canvas').addEventListener('click', () => {
+  const c = $id('signature-canvas');
   canvasCtx.clearRect(0, 0, c.width, c.height);
 });
 
-document.getElementById('typed-signature').addEventListener('input', e => {
-  document.getElementById('typed-preview').textContent = e.target.value;
+$id('typed-signature').addEventListener('input', e => {
+  $id('typed-preview').textContent = e.target.value;
   renderFontPicker();
 });
 
-document.getElementById('apply-signature-btn').addEventListener('click', async () => {
+$id('apply-signature-btn').addEventListener('click', async () => {
   const fieldId = signing.currentFieldId;
   const field = signing.data.fields.find(f => f.id === fieldId);
   const el = document.querySelector(`.signing-field[data-field-id="${fieldId}"]`);
 
   let sigData, sigType;
   if (signing.signatureMode === 'draw') {
-    const canvas = document.getElementById('signature-canvas');
+    const canvas = $id('signature-canvas');
     const pixels = canvasCtx.getImageData(0, 0, canvas.width, canvas.height).data;
     if (!pixels.some((v, i) => i % 4 === 3 && v > 0)) {
       toast('Please draw your signature', 'error');
@@ -1559,7 +1573,7 @@ document.getElementById('apply-signature-btn').addEventListener('click', async (
     sigData = canvas.toDataURL('image/png');
     sigType = 'draw';
   } else {
-    sigData = document.getElementById('typed-signature').value.trim();
+    sigData = $id('typed-signature').value.trim();
     if (!sigData) { toast('Please type your name', 'error'); return; }
     sigType = 'type';
     signing.currentSigFont = selectedSigFont.family;
@@ -1585,27 +1599,27 @@ document.getElementById('apply-signature-btn').addEventListener('click', async (
 });
 
 // Finish signing
-document.getElementById('finish-signing-btn-side')?.addEventListener('click', () => {
-  document.getElementById('finish-signing-btn').click();
+$id('finish-signing-btn-side')?.addEventListener('click', () => {
+  $id('finish-signing-btn').click();
 });
-document.getElementById('finish-signing-btn').addEventListener('click', async () => {
+$id('finish-signing-btn').addEventListener('click', async () => {
   try {
     await api(`/api/sign/${signing.token}/complete`, { method: 'POST' });
     showView('signing-done-view');
-    document.getElementById('done-title').textContent = 'Document Signed!';
-    document.getElementById('done-message').textContent = 'Thank you. The document owner will be notified.';
+    $id('done-title').textContent = 'Document Signed!';
+    $id('done-message').textContent = 'Thank you. The document owner will be notified.';
     document.querySelector('.done-icon').textContent = '\u2713';
     document.querySelector('.done-icon').style.background = '#0a6b5c';
     document.querySelector('.done-icon').style.color = '#fff';
     // Summary
-    const summary = document.getElementById('done-summary');
+    const summary = $id('done-summary');
     if (summary && signing.data) {
       const now = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
       summary.innerHTML = `Signed "${esc(signing.data.envelope_title)}" on ${now}`;
       summary.style.display = '';
     }
     // Download button
-    const dlBtn = document.getElementById('done-download-btn');
+    const dlBtn = $id('done-download-btn');
     if (dlBtn && signing.data) {
       dlBtn.style.display = '';
       dlBtn.onclick = () => {
@@ -1614,26 +1628,26 @@ document.getElementById('finish-signing-btn').addEventListener('click', async ()
       };
     }
     // Email note
-    const emailNote = document.getElementById('done-email-note');
+    const emailNote = $id('done-email-note');
     if (emailNote) emailNote.style.display = '';
   } catch (err) { toast(err.message, 'error'); }
 });
 
 // Decline
-document.getElementById('decline-btn').addEventListener('click', () => {
-  document.getElementById('decline-reason').value = '';
+$id('decline-btn').addEventListener('click', () => {
+  $id('decline-reason').value = '';
   showModal('decline-modal');
 });
-document.getElementById('confirm-decline-btn').addEventListener('click', async () => {
+$id('confirm-decline-btn').addEventListener('click', async () => {
   try {
     await api(`/api/sign/${signing.token}/decline`, {
       method: 'POST',
-      body: JSON.stringify({ reason: document.getElementById('decline-reason').value })
+      body: JSON.stringify({ reason: $id('decline-reason').value })
     });
     hideModal('decline-modal');
     showView('signing-done-view');
-    document.getElementById('done-title').textContent = 'Signing Declined';
-    document.getElementById('done-message').textContent = 'The document owner has been notified.';
+    $id('done-title').textContent = 'Signing Declined';
+    $id('done-message').textContent = 'The document owner has been notified.';
     document.querySelector('.done-icon').textContent = '\u2717';
     document.querySelector('.done-icon').style.background = '#8b2e2e';
     document.querySelector('.done-icon').style.color = '#fff';
@@ -1651,7 +1665,7 @@ async function loadAdminPanel() {
 async function loadAdminStats() {
   try {
     const s = await api('/api/admin/stats');
-    document.getElementById('admin-stats').innerHTML = `
+    $id('admin-stats').innerHTML = `
       <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value">${s.users}</div></div>
       <div class="stat-card"><div class="stat-label">Active Users</div><div class="stat-value">${s.activeUsers}</div></div>
       <div class="stat-card"><div class="stat-label">Envelopes</div><div class="stat-value">${s.envelopes}</div></div>
@@ -1665,7 +1679,7 @@ async function loadAdminStats() {
 async function loadAdminUsers() {
   try {
     const users = await api('/api/admin/users');
-    document.getElementById('admin-users-list').innerHTML = `<table class="admin-table">
+    $id('admin-users-list').innerHTML = `<table class="admin-table">
       <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Envelopes</th><th>Actions</th></tr></thead>
       <tbody>${users.map(u => `<tr>
         <td><strong>${esc(u.name)}</strong></td>
@@ -1685,15 +1699,15 @@ async function loadAdminUsers() {
 }
 
 function openResetPw(userId, name) {
-  document.getElementById('reset-pw-user-id').value = userId;
-  document.getElementById('reset-pw-user-label').textContent = `Reset password for ${name}`;
+  $id('reset-pw-user-id').value = userId;
+  $id('reset-pw-user-label').textContent = `Reset password for ${name}`;
   showModal('reset-pw-modal');
 }
 
 async function loadAdminInvitations() {
   try {
     const inv = await api('/api/admin/invitations');
-    document.getElementById('admin-invitations-list').innerHTML = inv.length === 0
+    $id('admin-invitations-list').innerHTML = inv.length === 0
       ? '<div class="empty-state"><p>No invitations yet.</p></div>'
       : `<table class="admin-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>${inv.map(i => {
@@ -1727,7 +1741,7 @@ async function revokeInvite(id) {
 async function loadAdminEnvelopes() {
   try {
     const envs = await api('/api/admin/envelopes');
-    document.getElementById('admin-envelopes-list').innerHTML = envs.length === 0
+    $id('admin-envelopes-list').innerHTML = envs.length === 0
       ? '<div class="empty-state"><p>No envelopes.</p></div>'
       : envs.map(e => `<div class="envelope-row" onclick="viewEnvelope('${e.id}')">
           <div class="envelope-title">${esc(e.title)}</div>
@@ -1760,17 +1774,17 @@ document.querySelectorAll('.admin-tab').forEach(t => t.addEventListener('click',
   document.querySelectorAll('.admin-tab').forEach(x => x.classList.remove('active'));
   t.classList.add('active');
   document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.add('hidden'));
-  document.getElementById(`admin-${t.dataset.adminTab}-tab`)?.classList.remove('hidden');
+  $id(`admin-${t.dataset.adminTab}-tab`)?.classList.remove('hidden');
 }));
 
 // Invite modal
-document.getElementById('invite-user-btn')?.addEventListener('click', () => {
-  document.getElementById('invite-result').classList.add('hidden');
-  document.getElementById('invite-form').reset();
+$id('invite-user-btn')?.addEventListener('click', () => {
+  $id('invite-result').classList.add('hidden');
+  $id('invite-form').reset();
   showModal('invite-modal');
 });
 
-document.getElementById('invite-form').addEventListener('submit', async e => {
+$id('invite-form').addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target;
   try {
@@ -1779,8 +1793,8 @@ document.getElementById('invite-form').addEventListener('submit', async e => {
       body: JSON.stringify({ name: f.name.value, email: f.email.value, role: f.role.value })
     });
     const link = `${location.origin}/invite/${r.token}`;
-    document.getElementById('invite-result').classList.remove('hidden');
-    document.getElementById('invite-result').innerHTML = `
+    $id('invite-result').classList.remove('hidden');
+    $id('invite-result').innerHTML = `
       <div class="invite-success">
         <p>Invitation created!</p>
         <div class="invite-link-box">
@@ -1795,10 +1809,10 @@ document.getElementById('invite-form').addEventListener('submit', async e => {
 });
 
 // Reset password
-document.getElementById('reset-pw-form').addEventListener('submit', async e => {
+$id('reset-pw-form').addEventListener('submit', async e => {
   e.preventDefault();
   try {
-    await api(`/api/admin/users/${document.getElementById('reset-pw-user-id').value}/reset-password`, {
+    await api(`/api/admin/users/${$id('reset-pw-user-id').value}/reset-password`, {
       method: 'POST',
       body: JSON.stringify({ password: e.target.password.value })
     });
@@ -1812,7 +1826,7 @@ document.getElementById('reset-pw-form').addEventListener('submit', async e => {
 async function loadTemplatesView() {
   try {
     const envs = await api('/api/envelopes?status=completed');
-    const el = document.getElementById('templates-recent-list');
+    const el = $id('templates-recent-list');
     if (envs.length === 0) {
       el.innerHTML = '<p style="color:var(--ink3);font-size:13px;">No completed envelopes to save as templates yet.</p>';
       return;
@@ -1843,14 +1857,14 @@ async function loadReportsView() {
     const inProgress = total > 0 ? Math.round((sent / total) * 100) : 0;
     const declinedRate = total > 0 ? Math.round((declined / total) * 100) : 0;
 
-    document.getElementById('reports-stats').innerHTML = `
+    $id('reports-stats').innerHTML = `
       <div class="stat-card"><div class="stat-label">Total Envelopes</div><div class="stat-value">${total}</div></div>
       <div class="stat-card"><div class="stat-label">Completion Rate</div><div class="stat-value">${rate}%</div></div>
       <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-value">${sent}</div></div>
       <div class="stat-card"><div class="stat-label">Declined / Voided</div><div class="stat-value" style="color:var(--rose)">${declined}</div></div>
     `;
 
-    document.getElementById('reports-charts').innerHTML = `
+    $id('reports-charts').innerHTML = `
       <div class="detail-card" style="margin-bottom:16px">
         <div class="detail-card-head"><h3>Envelope Success Rate</h3></div>
         <div class="detail-card-body">
@@ -1888,10 +1902,10 @@ async function handleInvite(token) {
     document.querySelector('[data-tab="register"]').classList.add('active');
     document.querySelector('[data-tab="register"]').classList.remove('hidden');
     document.querySelector('.tab-bar').classList.remove('hidden');
-    document.getElementById('login-form').classList.add('hidden');
-    document.getElementById('register-form').classList.remove('hidden');
-    document.getElementById('invite-notice')?.classList.add('hidden');
-    const form = document.getElementById('register-form');
+    $id('login-form').classList.add('hidden');
+    $id('register-form').classList.remove('hidden');
+    $id('invite-notice')?.classList.add('hidden');
+    const form = $id('register-form');
     form.name.value = inv.name;
     form.email.value = inv.email;
     form.email.readOnly = true;
