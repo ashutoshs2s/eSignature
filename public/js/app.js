@@ -482,9 +482,16 @@ async function viewEnvelope(id) {
     const env = await api(`/api/envelopes/${id}`);
     showView('envelope-detail-view');
     const el = document.getElementById('envelope-detail');
+    if (!el) { toast('View not found. Please refresh the page.', 'error'); return; }
 
-    const totalFields = env.fields ? env.fields.length : 0;
-    const signedFields = env.fields ? env.fields.filter(f => f.value).length : 0;
+    // Ensure arrays exist even if API response is incomplete
+    if (!env.documents) env.documents = [];
+    if (!env.recipients) env.recipients = [];
+    if (!env.fields) env.fields = [];
+    if (!env.auditLog) env.auditLog = [];
+
+    const totalFields = env.fields.length;
+    const signedFields = env.fields.filter(f => f.value).length;
     const totalPages = env.documents.reduce((s, d) => s + (d.page_count || 0), 0);
 
     el.innerHTML = `
