@@ -1,19 +1,25 @@
 /* global pdfjsLib */
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+// VERSION CHECK — if you see this in the console, you have the latest code
+console.log('%c[eSign v16] Code loaded successfully', 'color: green; font-weight: bold; font-size: 14px');
+
 // Global error handler to show exact error location
 window.addEventListener('error', function(e) {
-  const msg = e.message || 'Unknown error';
-  const src = e.filename || '';
-  const line = e.lineno || 0;
-  const col = e.colno || 0;
+  var msg = e.message || 'Unknown error';
+  var src = e.filename || '';
+  var line = e.lineno || 0;
+  var col = e.colno || 0;
   console.error('ERROR at ' + src + ':' + line + ':' + col + ' — ' + msg);
-  // Show a visible alert box so the user can report the exact line
-  const d = document.createElement('div');
-  d.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;z-index:99999;background:#fee;border:2px solid red;padding:16px;font-size:14px;font-family:monospace;border-radius:8px;color:#900;';
-  d.innerHTML = '<b>JS Error</b><br>File: ' + src.split('/').pop() + '<br>Line: ' + line + ', Col: ' + col + '<br>Message: ' + msg + '<br><br><small>Click to dismiss</small>';
-  d.onclick = function() { d.remove(); };
-  document.body.appendChild(d);
+  if (e.error && e.error.stack) console.error('Stack:', e.error.stack);
+  alert('JS Error at line ' + line + ':\n' + msg + '\n\nFile: ' + src.split('/').pop());
+});
+
+// Catch unhandled promise rejections too
+window.addEventListener('unhandledrejection', function(e) {
+  var msg = e.reason ? (e.reason.message || String(e.reason)) : 'Unknown promise rejection';
+  console.error('Unhandled rejection:', msg);
+  alert('Async Error:\n' + msg);
 });
 
 // Safe helpers: never return null (prevents innerHTML/classList crashes)
