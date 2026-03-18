@@ -10,7 +10,7 @@ window.onerror = function(msg, src, line, col) {
 // Safe helper: getElementById that never returns null (prevents innerHTML crashes)
 const _dummyEl = document.createElement('div');
 function $id(id) {
-  const el = $id(id);
+  const el = document.getElementById(id);
   if (!el) { console.warn('Element not found: #' + id); return _dummyEl; }
   return el;
 }
